@@ -1,0 +1,6 @@
+[package]
+name = "coord-atlas"
+version = "0.1.0"
+authors = ["Victor Lopez <vhrlopes@gmail.com>"]
+
+[dependencies]
