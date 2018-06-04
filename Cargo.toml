@@ -1,5 +1,5 @@
 [package]
-name = "coord-atlas"
+name = "coord_atlas"
 version = "0.1.0"
 authors = ["Victor Lopez <vhrlopes@gmail.com>"]
 
