@@ -2,5 +2,7 @@
 name = "geomorph"
 version = "0.1.0"
 authors = ["Victor Lopez <vhrlopes@gmail.com>"]
+description = "Simple conversion between different coordinate systems"
+license = "MIT"
 
 [dependencies]
