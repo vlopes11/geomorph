@@ -7,15 +7,15 @@ use coord::Coord;
 ///
 /// # Examples
 /// ```
-/// extern crate coord_atlas;
+/// extern crate geomorph;
 ///
 /// let lat: f64 = -23.0095839;
 /// let lon: f64 = -43.4361816;
 ///
-/// let coord = coord_atlas::coord::Coord::new(lat, lon)
+/// let coord = geomorph::coord::Coord::new(lat, lon)
 ///     .unwrap();
 ///
-/// let utm = coord_atlas::utm::Utm::new(coord)
+/// let utm = geomorph::utm::Utm::new(coord)
 ///     .unwrap();
 /// ```
 ///
@@ -30,6 +30,8 @@ pub struct Utm {
 impl Utm {
     ///
     /// Return a new Utm instance.
+    ///
+    /// Inspired on the work of Rafael Palacios.
     ///
     pub fn new(coord: Coord) -> Result<Utm, ParseError> {
         let lat = coord.lat;

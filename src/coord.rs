@@ -5,12 +5,12 @@ use ParseError;
 ///
 /// # Examples
 /// ```
-/// extern crate coord_atlas;
+/// extern crate geomorph;
 ///
 /// let lat: f64 = -23.0095839;
 /// let lon: f64 = -43.4361816;
 ///
-/// let coord = coord_atlas::coord::Coord::new(lat, lon)
+/// let coord = geomorph::coord::Coord::new(lat, lon)
 ///     .unwrap();
 /// ```
 ///
