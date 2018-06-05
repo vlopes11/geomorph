@@ -7,16 +7,21 @@ use coord::Coord;
 ///
 /// # Examples
 /// ```
+/// use std::error::Error;
+///
 /// extern crate geomorph;
 ///
-/// let lat: f64 = -23.0095839;
-/// let lon: f64 = -43.4361816;
+/// fn try_main() -> Result<geomorph::utm::Utm, geomorph::ParseError> {
+///     let lat: f64 = -23.0095839;
+///     let lon: f64 = -43.4361816;
 ///
-/// let coord = geomorph::coord::Coord::new(lat, lon)
-///     .unwrap();
+///     let coord = geomorph::coord::Coord::new(lat, lon)?;
+///     geomorph::utm::Utm::new(coord)
+/// }
 ///
-/// let utm = geomorph::utm::Utm::new(coord)
-///     .unwrap();
+/// fn main() {
+///     let utm = try_main().unwrap();
+/// }
 /// ```
 ///
 pub struct Utm {

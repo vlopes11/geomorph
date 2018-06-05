@@ -5,13 +5,20 @@ use ParseError;
 ///
 /// # Examples
 /// ```
+/// use std::error::Error;
+///
 /// extern crate geomorph;
 ///
-/// let lat: f64 = -23.0095839;
-/// let lon: f64 = -43.4361816;
+/// fn try_main() -> Result<geomorph::coord::Coord, geomorph::ParseError> {
+///     let lat: f64 = -23.0095839;
+///     let lon: f64 = -43.4361816;
+///     
+///     geomorph::coord::Coord::new(lat, lon)
+/// }
 ///
-/// let coord = geomorph::coord::Coord::new(lat, lon)
-///     .unwrap();
+/// fn main() {
+///     let coord = try_main().unwrap();
+/// }
 /// ```
 ///
 pub struct Coord {
