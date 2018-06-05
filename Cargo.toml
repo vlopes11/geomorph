@@ -1,5 +1,5 @@
 [package]
-name = "coord_atlas"
+name = "geomorph"
 version = "0.1.0"
 authors = ["Victor Lopez <vhrlopes@gmail.com>"]
 
