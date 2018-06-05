@@ -1,7 +1,15 @@
+//! 
+//! Simple conversion between different coordinate systems
+//! without external wrappers injection
+//!
+
 use std::error::Error;
 use std::fmt;
 
+/// Latitude and longitude coordinates
 pub mod coord;
+/// Universal Transverse Mercator (UTM)
+pub mod utm;
 
 #[derive(Debug)]
 pub struct ParseError {
