@@ -6,6 +6,9 @@ description = "Simple conversion between different coordinate systems"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/vlopes11/geomorph"
-keywords = ["geo", "geospatial", "coordinates", "geospatial", "transforms", "transformations"]
+keywords = ["geo", "geospatial", "coordinates", "transforms", "transformations"]
+
+[badges]
+travis-ci = { repository = "vlopes11/geomorph" }
 
 [dependencies]
