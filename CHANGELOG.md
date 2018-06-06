@@ -3,14 +3,14 @@
 ## [Todo]
 
 * Implement MGRS
-* Replace ParseError for standard Error
-* Implement `Utm.to_coords()`
-* Improve readability of `Utm::new(coord: Coord)`
-* Improve precision of `Utm::new(coord: Coord)`
+* Improve readability of `Utm::new` and `Utm::to_coord`
+* Improve precision of `Utm::new` and `Utm::to_coord`
+* Implement other datums than WGS84 for `Utm::new` and `Utm::to_coord`
 
 ## [Unreleased]
 
 * Implement `Coord.to_utm()`
+* Implement `Utm.to_coord()`
 
 ## [0.2.0] - 2018-06-06
 

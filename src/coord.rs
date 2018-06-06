@@ -32,10 +32,17 @@ impl Coord {
     ///
     /// Return a new Coord instance.
     ///
-    /// Params:
+    /// # Arguments
     ///
-    /// - `lat: &f64` Must be contained in the interval [-90.0..90.0]
-    /// - `lon: &f64` Must be contained in the interval [-180.0..180.0]
+    /// * `lat: &f64` - Must be contained in the interval [-90.0..90.0]
+    /// * `lon: &f64` - Must be contained in the interval [-180.0..180.0]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// let coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// ```
     ///
     pub fn new(lat: &f64, lon: &f64) -> Result<Coord, ParseError> {
         let dref_lat = *lat;
@@ -56,6 +63,14 @@ impl Coord {
     
     /// 
     /// Return a new Utm instance with current coordinates.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// let coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// let utm = coord.to_utm().unwrap();
+    /// ```
     ///
     pub fn to_utm(&self) -> Result<utm::Utm, ParseError>  {
         utm::Utm::new(self)
@@ -105,18 +120,18 @@ mod tests {
     }
 
     #[test]
-    fn to_coords() {
+    fn to_utm() {
         let lat: f64 = 55.722682;
         let lon: f64 = 37.640653;
-        let coords = Coord::new(&lat, &lon).unwrap();
-        let utm = coords.to_utm().unwrap();
+        let coord = Coord::new(&lat, &lon).unwrap();
+        let utm = coord.to_utm().unwrap();
         assert!((utm.easting - 414617.4).abs() < 1.0);
         assert!((utm.northing - 6176052.6).abs() < 1.0);
         assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 37);
         assert_eq!(utm.band, 'U');
-        assert_eq!(coords.lat, lat);
-        assert_eq!(coords.lon, lon);
+        assert_eq!(coord.lat, lat);
+        assert_eq!(coord.lon, lon);
     }
 }
 

@@ -139,6 +139,83 @@ impl Utm {
             band,
         })
     }
+
+    /// 
+    /// Return a new Coord instance with current UTM parameters.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// use geomorph::utm::Utm;
+    /// let coord: Coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// let utm: Utm = coord.to_utm().unwrap();
+    /// let coord2: Coord = utm.to_coord().unwrap();
+    /// ```
+    ///
+    pub fn to_coord(&self) -> Result<Coord, ParseError>  {
+        let latitude: f64;
+        let longitude: f64;
+
+        let easting: f64 = self.easting;
+        let northing: f64 = self.northing;
+        let north: bool = self.north;
+        let zone = self.zone;
+
+        let sa: f64 = 6378137.000000;
+        let sb: f64 = 6356752.314245;
+        let e_0: f64 = 500000.0;
+        let kf: f64 = 6366197.724;
+        let k_0: f64 = 0.9996;
+
+        let e2: f64 = (sa.powi(2) - sb.powi(2)).sqrt() / sb;
+        let e2_2: f64 = e2.powi(2);
+        let c: f64 = sa.powi(2) / sb;
+        let xc: f64 = easting - e_0;
+        let yc: f64;
+        if north {
+            yc = northing;
+        } else {
+            yc = northing - e_0;
+        }
+
+        let sc: f64 = (zone as f64 * 6.0) - 183.0;
+        let lat: f64 = yc * k_0 / kf;
+        let v: f64 = c * k_0 / (1.0 + e2_2 * lat.cos().powi(2)).sqrt();
+        let a: f64 = xc / v;
+        let a1: f64 = (2.0 * lat).sin();
+        let a2: f64 = a1 * lat.cos().powi(2);
+        let j2: f64 = lat + a1 / 2.0;
+
+        let j4: f64 = (3.0 * j2 + a2) / 4.0;
+        let j6: f64 = (5.0 * j4 + a2 * lat.cos().powi(2)) / 3.0;
+        let alfa: f64 = 3.0 * e2_2 / 4.0;
+        let beta: f64 = 5.0 * alfa.powi(2) / 3.0;
+        let gama: f64 = 35.0 * alfa.powi(3) / 27.0;
+        let bcm: f64 = k_0 * c * (lat - alfa * j2 + beta * j4 - gama * j6);
+        let b: f64 = (yc - bcm) / v;
+        let epsilon: f64 = e2_2 * a.powi(2) * lat.cos().powi(2) / 2.0;
+        let epsilon2 = a * (1.0 - epsilon / 3.0);
+
+        let nab: f64 = b * (1.0 - epsilon) + lat;
+        let senoheps: f64 = (epsilon2.exp() - (-epsilon2).exp()) / 2.0;
+        let delta: f64 = (senoheps / nab.cos()).atan();
+        let tao: f64 = (delta.cos() * nab.tan()).atan();
+
+        longitude = delta.to_degrees() + sc;
+        latitude =
+            (
+                lat +
+                (
+                    1.0 +
+                    e2_2 * lat.cos().powi(2) -
+                    3.0 * e2_2 * lat.sin() * lat.cos() * (tao - lat) / 2.0
+                ) *
+                (tao - lat)
+            ).to_degrees();
+
+        Coord::new(&latitude, &longitude)
+    }
 }
 
 #[cfg(test)]
@@ -235,5 +312,16 @@ mod tests {
         assert_eq!(utm.band, 'H');
         assert_eq!(coord.lat, lat);
         assert_eq!(coord.lon, lon);
+    }
+
+    #[test]
+    fn to_coord() {
+        let lat: f64 = 55.722682;
+        let lon: f64 = 37.640653;
+        let coord = Coord::new(&lat, &lon).unwrap();
+        let utm = Utm::new(&coord).unwrap();
+        let coord_reconv = utm.to_coord().unwrap();
+        assert!((coord_reconv.lat - lat).abs() < 0.01);
+        assert!((coord_reconv.lon - lon).abs() < 0.01);
     }
 }
