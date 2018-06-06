@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2018-06-07
+
 * Implement `Coord.to_utm()`
 * Implement `Utm.to_coord()`
 
