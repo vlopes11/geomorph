@@ -2,10 +2,14 @@
 
 ## [Todo]
 
-* Implement MGRS
 * Improve readability of `Utm::new` and `Utm::to_coord`
 * Improve precision of `Utm::new` and `Utm::to_coord`
 * Implement other datums than WGS84 for `Utm::new` and `Utm::to_coord`
+
+## [Backlog]
+
+* Implement MGRS
+* Implement `std::fmt` for Coord, Utm and MGRS
 
 ## [Unreleased]
 
