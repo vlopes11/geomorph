@@ -2,6 +2,27 @@
 //! Simple conversion between different coordinate systems
 //! without external wrappers injection
 //!
+//! # Code Example
+//! ```
+//! extern crate geomorph;
+//! use geomorph::*;
+//! 
+//! fn try_main() -> Result<coord::Coord, ParseError> {
+//!     let lat: f64 = -23.0095839;
+//!     let lon: f64 = -43.4361816;
+//!     
+//!     coord::Coord::new(&lat, &lon)
+//! }
+//! 
+//! fn try_main_utm(coord: coord::Coord) -> Result<utm::Utm, ParseError> {
+//!     utm::Utm::new(&coord)
+//! }
+//! 
+//! fn main() {
+//!     let coord = try_main().unwrap();
+//!     let utm = try_main_utm(coord);
+//! }
+//! ```
 
 use std::error::Error;
 use std::fmt;
