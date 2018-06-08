@@ -14,13 +14,18 @@
 //!     coord::Coord::new(&lat, &lon)
 //! }
 //! 
-//! fn try_main_utm(coord: coord::Coord) -> Result<utm::Utm, ParseError> {
-//!     utm::Utm::new(&coord)
+//! fn try_main_utm(coord: &coord::Coord)-> Result<utm::Utm, ParseError> {
+//!     utm::Utm::new(coord)
 //! }
 //! 
 //! fn main() {
 //!     let coord = try_main().unwrap();
-//!     let utm = try_main_utm(coord);
+//!     let utm = try_main_utm(&coord).unwrap();
+//!     println!("coord: {}", coord);
+//!     println!("utm: {}", utm);
+//!     // Will print:
+//!     //  coord: (-23.0095839, -43.4361816)
+//!     //  utm: 23K 660265 7454564
 //! }
 //! ```
 
@@ -47,3 +52,20 @@ impl Error for ParseError {
         "Parse error with the provided information!"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn full_test() {
+        let lat: f64 = -23.0095839;
+        let lon: f64 = -43.4361816;
+        let coord = coord::Coord::new(&lat, &lon).unwrap();
+        let utm = coord.to_utm().unwrap();
+        let coord2 = utm.to_coord().unwrap();
+
+        println!("coord: {}, utm: {}, coord2: {}", coord, utm, coord2);
+    }
+}
+

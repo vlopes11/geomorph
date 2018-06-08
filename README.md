@@ -24,6 +24,11 @@ fn try_main_utm(coord: coord::Coord) -> Result<utm::Utm, ParseError> {
 
 fn main() {
     let coord = try_main().unwrap();
-    let utm = try_main_utm(coord);
+    let utm = try_main_utm(&coord).unwrap();
+    println!("coord: {}", coord);
+    println!("utm: {}", utm);
+    // Will print:
+    //  coord: (-23.0095839, -43.4361816)
+    //  utm: 23K 660265 7454564
 }
 ```

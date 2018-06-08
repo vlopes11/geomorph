@@ -1,4 +1,5 @@
 use std::f64::consts;
+use std::fmt;
 use ParseError;
 use coord::Coord;
 
@@ -323,5 +324,15 @@ mod tests {
         let coord_reconv = utm.to_coord().unwrap();
         assert!((coord_reconv.lat - lat).abs() < 0.01);
         assert!((coord_reconv.lon - lon).abs() < 0.01);
+    }
+}
+
+impl fmt::Display for Utm {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{} {} {}",
+               self.zone,
+               self.band,
+               self.easting.trunc(),
+               self.northing.trunc())
     }
 }

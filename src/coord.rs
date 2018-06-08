@@ -1,3 +1,4 @@
+use std::fmt;
 use ParseError;
 use utm;
 
@@ -135,3 +136,8 @@ mod tests {
     }
 }
 
+impl fmt::Display for Coord {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.lat, self.lon)
+    }
+}

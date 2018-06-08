@@ -9,9 +9,12 @@
 ## [Backlog]
 
 * Implement MGRS
-* Implement `std::fmt` for Coord, Utm and MGRS
 
 ## [Unreleased]
+
+## [0.2.2] - 2018-06-08
+
+* Implement `std::fmt` for Coord and Utm
 
 ## [0.2.1] - 2018-06-07
 
