@@ -1,6 +1,6 @@
 use std::fmt;
 use ParseError;
-use utm;
+use utm::Utm;
 
 /// 
 /// Holds a pair for latitude and longitude coordinates
@@ -63,6 +63,32 @@ impl Coord {
     }
     
     /// 
+    /// Return a new Coord from an UTM instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::utm::Utm;
+    /// use geomorph::coord::Coord;
+    /// let easting: f64 = 298559.28045456996;
+    /// let northing: f64 = 1774394.8286476505;
+    /// let north: bool = true;
+    /// let zone: i32 = 48;
+    /// let band: char = 'N';
+    /// let utm = Utm::new(
+    ///     &easting,
+    ///     &northing,
+    ///     &north,
+    ///     &zone,
+    ///     &band).unwrap();
+    /// let coord = utm.to_coord().unwrap();
+    /// ```
+    ///
+    pub fn from_utm(utm: &Utm) -> Result<Coord, ParseError>  {
+        utm.to_coord()
+    }
+    
+    /// 
     /// Return a new Utm instance with current coordinates.
     ///
     /// # Example
@@ -73,8 +99,8 @@ impl Coord {
     /// let utm = coord.to_utm().unwrap();
     /// ```
     ///
-    pub fn to_utm(&self) -> Result<utm::Utm, ParseError>  {
-        utm::Utm::new(self)
+    pub fn to_utm(&self) -> Result<Utm, ParseError>  {
+        Utm::from_coord(self)
     }
 }
 
@@ -133,6 +159,29 @@ mod tests {
         assert_eq!(utm.band, 'U');
         assert_eq!(coord.lat, lat);
         assert_eq!(coord.lon, lon);
+    }
+
+    #[test]
+    fn from_utm() {
+        let easting: f64 = 725641.61743212992;
+        let northing: f64 = 4911303.2874210617;
+        let north: bool = true;
+        let zone: i32 = 34;
+        let band: char = 'N';
+
+        let lat: f64 = 44.319940;
+        let lon: f64 = 23.829616;
+
+        let utm: Utm = Utm::new(
+            &easting,
+            &northing,
+            &north,
+            &zone,
+            &band).unwrap();
+
+        let coord: Coord = utm.to_coord().unwrap();
+        assert!((coord.lat - lat).abs() < 0.01);
+        assert!((coord.lon - lon).abs() < 0.01);
     }
 }
 

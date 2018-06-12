@@ -5,12 +5,17 @@
 * Improve readability of `Utm::new` and `Utm::to_coord`
 * Improve precision of `Utm::new` and `Utm::to_coord`
 * Implement other datums than WGS84 for `Utm::new` and `Utm::to_coord`
+* Use UPS for poles coordinates
 
 ## [Backlog]
 
 * Implement MGRS
 
 ## [Unreleased]
+
+## [0.3.0] - 2018-06-11
+
+* Standarization of class methods
 
 ## [0.2.2] - 2018-06-08
 

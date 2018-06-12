@@ -16,7 +16,7 @@ use coord::Coord;
 ///     let lon: f64 = -43.4361816;
 ///
 ///     let coord = coord::Coord::new(&lat, &lon)?;
-///     utm::Utm::new(&coord)
+///     utm::Utm::from_coord(&coord)
 /// }
 ///
 /// fn main() {
@@ -36,9 +36,59 @@ impl Utm {
     ///
     /// Return a new Utm instance.
     ///
+    /// # Arguments
+    ///
+    /// * `easting: &f64`
+    /// * `northing: &f64`
+    /// * `north: &bool`
+    /// * `zone: &i32`
+    /// * `band: &char`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::utm::Utm;
+    /// let easting: f64 = 298559.28045456996;
+    /// let northing: f64 = 1774394.8286476505;
+    /// let north: bool = true;
+    /// let zone: i32 = 48;
+    /// let band: char = 'N';
+    /// let utm = Utm::new(
+    ///     &easting,
+    ///     &northing,
+    ///     &north,
+    ///     &zone,
+    ///     &band).unwrap();
+    /// ```
+    ///
+    pub fn new(
+        easting: &f64,
+        northing: &f64,
+        north: &bool,
+        zone: &i32,
+        band: &char) -> Result<Utm, ParseError> {
+
+        let dref_easting = *easting;
+        let dref_northing = *northing;
+        let dref_north = *north;
+        let dref_zone = *zone;
+        let dref_band = *band;
+
+        Ok(Utm {
+            easting: dref_easting,
+            northing: dref_northing,
+            north: dref_north,
+            zone: dref_zone,
+            band: dref_band
+        })
+    }
+
+    ///
+    /// Return a new Utm instance from a given coordinate.
+    ///
     /// Inspired on the work of Rafael Palacios.
     ///
-    pub fn new(coord: &Coord) -> Result<Utm, ParseError> {
+    pub fn from_coord(coord: &Coord) -> Result<Utm, ParseError> {
         let lat = coord.lat;
         let lon = coord.lon;
 
@@ -226,7 +276,7 @@ mod tests {
     #[test]
     fn utm_zone_south() {
         let coord = Coord {lat: -23.0095839, lon: -43.4361816};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 660265.0944068021).abs() < 1.0);
         assert!((utm.northing - 7454564.243324452).abs() < 1.0);
         assert_eq!(utm.north, false);
@@ -237,7 +287,7 @@ mod tests {
     #[test]
     fn utm_zone_north() {
         let coord = Coord {lat: 52.517153, lon: 13.412389};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 392273.6051633584).abs() < 1.0);
         assert!((utm.northing - 5819744.4599129185).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -248,7 +298,7 @@ mod tests {
     #[test]
     fn utm_norway_zone() {
         let coord = Coord {lat: 61.076521, lon: 4.680180};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 267038.76).abs() < 1.0);
         assert!((utm.northing - 6779002.66).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -259,7 +309,7 @@ mod tests {
     #[test]
     fn utm_svalbard_zone_1() {
         let coord = Coord {lat: 78.891608, lon: 10.457194};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 402386.73).abs() < 1.0);
         assert!((utm.northing - 8761675.98).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -270,7 +320,7 @@ mod tests {
     #[test]
     fn utm_svalbard_zone_2() {
         let coord = Coord {lat: 78.122200, lon: 20.349504};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 622751.81).abs() < 1.0);
         assert!((utm.northing - 8677619.41).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -281,7 +331,7 @@ mod tests {
     #[test]
     fn utm_svalbard_zone_3() {
         let coord = Coord {lat: 78.102575, lon: 21.013745};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 362459.56).abs() < 1.0);
         assert!((utm.northing - 8676854.75).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -292,7 +342,7 @@ mod tests {
     #[test]
     fn utm_svalbard_zone_4() {
         let coord = Coord {lat: 78.138264, lon: 30.194746};
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 573272.89).abs() < 1.0);
         assert!((utm.northing - 8675799.74).abs() < 1.0);
         assert_eq!(utm.north, true);
@@ -305,7 +355,7 @@ mod tests {
         let lat: f64 = -34.073088;
         let lon: f64 = 18.549757;
         let coord = Coord::new(&lat, &lon).unwrap();
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         assert!((utm.easting - 273893.5).abs() < 1.0);
         assert!((utm.northing - 6227030.5).abs() < 1.0);
         assert_eq!(utm.north, false);
@@ -320,10 +370,30 @@ mod tests {
         let lat: f64 = 55.722682;
         let lon: f64 = 37.640653;
         let coord = Coord::new(&lat, &lon).unwrap();
-        let utm = Utm::new(&coord).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
         let coord_reconv = utm.to_coord().unwrap();
         assert!((coord_reconv.lat - lat).abs() < 0.01);
         assert!((coord_reconv.lon - lon).abs() < 0.01);
+    }
+
+    #[test]
+    fn instantiate() {
+        let easting: f64 = 298559.28045456996;
+        let northing: f64 = 1774394.8286476505;
+        let north: bool = true;
+        let zone: i32 = 48;
+        let band: char = 'N';
+        let utm = Utm::new(
+            &easting,
+            &northing,
+            &north,
+            &zone,
+            &band).unwrap();
+        assert_eq!(utm.easting, easting);
+        assert_eq!(utm.northing, northing);
+        assert_eq!(utm.north, north);
+        assert_eq!(utm.zone, zone);
+        assert_eq!(utm.band, band);
     }
 }
 

@@ -15,7 +15,7 @@
 //! }
 //! 
 //! fn try_main_utm(coord: &coord::Coord)-> Result<utm::Utm, ParseError> {
-//!     utm::Utm::new(coord)
+//!     utm::Utm::from_coord(coord)
 //! }
 //! 
 //! fn main() {
