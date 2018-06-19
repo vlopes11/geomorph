@@ -32,6 +32,8 @@
 use std::error::Error;
 use std::fmt;
 
+/// Mathematical auxiliary functions
+pub mod math;
 /// Latitude and longitude coordinates
 pub mod coord;
 /// Universal Transverse Mercator (UTM)

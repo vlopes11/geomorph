@@ -2,8 +2,6 @@
 
 ## [Todo]
 
-* Improve readability of `Utm::new` and `Utm::to_coord`
-* Improve precision of `Utm::new` and `Utm::to_coord`
 * Implement other datums than WGS84 for `Utm::new` and `Utm::to_coord`
 * Use UPS for poles coordinates
 
@@ -12,6 +10,8 @@
 * Implement MGRS
 
 ## [Unreleased]
+
+* Implement auxiliary math functions
 
 ## [0.3.0] - 2018-06-11
 
