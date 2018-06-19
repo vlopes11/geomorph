@@ -49,6 +49,7 @@ impl Utm {
     /// * `north: &bool`
     /// * `zone: &i32`
     /// * `band: &char`
+    /// * `ups: &bool`
     ///
     /// # Example
     ///
