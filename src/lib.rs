@@ -34,6 +34,8 @@ use std::fmt;
 
 /// Mathematical auxiliary functions
 pub mod math;
+/// Datum conventions
+pub mod datum;
 /// Latitude and longitude coordinates
 pub mod coord;
 /// Universal Transverse Mercator (UTM)

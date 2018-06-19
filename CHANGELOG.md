@@ -12,6 +12,7 @@
 ## [Unreleased]
 
 * Implement auxiliary math functions
+* Implement conventions datum
 
 ## [0.3.0] - 2018-06-11
 
