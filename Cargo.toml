@@ -12,3 +12,4 @@ keywords = ["geo", "geospatial", "coordinates", "transforms", "transformations"]
 travis-ci = { repository = "vlopes11/geomorph" }
 
 [dependencies]
+num-complex = "0.2"

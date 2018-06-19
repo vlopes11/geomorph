@@ -75,12 +75,14 @@ impl Coord {
     /// let north: bool = true;
     /// let zone: i32 = 48;
     /// let band: char = 'N';
+    /// let ups: bool = false;
     /// let utm = Utm::new(
     ///     &easting,
     ///     &northing,
     ///     &north,
     ///     &zone,
-    ///     &band).unwrap();
+    ///     &band,
+    ///     &ups).unwrap();
     /// let coord = utm.to_coord().unwrap();
     /// ```
     ///
@@ -152,8 +154,8 @@ mod tests {
         let lon: f64 = 37.640653;
         let coord = Coord::new(&lat, &lon).unwrap();
         let utm = coord.to_utm().unwrap();
-        assert!((utm.easting - 414617.4).abs() < 1.0);
-        assert!((utm.northing - 6176052.6).abs() < 1.0);
+        assert_eq!(utm.easting.trunc(), 414617.0);
+        assert_eq!(utm.northing.trunc(), 6176052.0);
         assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 37);
         assert_eq!(utm.band, 'U');
@@ -168,6 +170,7 @@ mod tests {
         let north: bool = true;
         let zone: i32 = 34;
         let band: char = 'N';
+        let ups: bool = false;
 
         let lat: f64 = 44.319940;
         let lon: f64 = 23.829616;
@@ -177,11 +180,12 @@ mod tests {
             &northing,
             &north,
             &zone,
-            &band).unwrap();
+            &band,
+            &ups).unwrap();
 
         let coord: Coord = utm.to_coord().unwrap();
-        assert!((coord.lat - lat).abs() < 0.01);
-        assert!((coord.lon - lon).abs() < 0.01);
+        assert_eq!((coord.lat * 100.0).trunc(), (lat * 100.0).trunc());
+        assert_eq!((coord.lon * 100.0).trunc(), (lon * 100.0).trunc());
     }
 }
 

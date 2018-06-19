@@ -3,7 +3,7 @@
 ## [Todo]
 
 * Implement other datums than WGS84 for `Utm::new` and `Utm::to_coord`
-* Use UPS for poles coordinates
+* Use UPS for poles coordinates in utm module
 
 ## [Backlog]
 
@@ -13,6 +13,7 @@
 
 * Implement auxiliary math functions
 * Implement conventions datum
+* Increase precision of conversion to utm
 
 ## [0.3.0] - 2018-06-11
 

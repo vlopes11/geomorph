@@ -14,21 +14,22 @@ use math;
 /// }
 /// ```
 ///
-#[derive(Debug)]
 pub struct Datum {
-    a: f64,
-    f: f64,
-    k0: f64,
-    e2: f64,
-    es: f64,
-    e2m: f64,
-    b1: f64,
-    a1: f64,
-    c: f64,
-    n: f64,
-    maxpow: usize,
-    alp: Vec<f64>,
-    bet: Vec<f64>,
+    pub a: f64,
+    pub f: f64,
+    pub k0: f64,
+    pub e2: f64,
+    pub es: f64,
+    pub e2m: f64,
+    pub b1: f64,
+    pub a1: f64,
+    pub c: f64,
+    pub n: f64,
+    pub maxpow: usize,
+    pub alp: Vec<f64>,
+    pub bet: Vec<f64>,
+    pub false_easting: Vec<f64>,
+    pub false_northing: Vec<f64>,
 }
 
 impl Datum {
@@ -58,6 +59,9 @@ impl Datum {
         let mut bet = Vec::with_capacity(maxpow + 1);
         alp.push(0.0);
         bet.push(0.0);
+
+        let false_easting = vec![2000000.0, 2000000.0, 500000.0, 500000.0];
+        let false_northing = vec![2000000.0, 2000000.0, 10000000.0, 0.0];
 
         let m = maxpow / 2;
         let b1: f64 = math::polyval(m, b1coeff, n.powi(2)) / 
@@ -89,6 +93,8 @@ impl Datum {
             maxpow,
             alp,
             bet,
+            false_easting,
+            false_northing,
         })
     }
     
