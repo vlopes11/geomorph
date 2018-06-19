@@ -11,6 +11,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2018-06-20
+
 * Implement auxiliary math functions
 * Implement conventions datum
 * Increase precision of conversion to utm
