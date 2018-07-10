@@ -40,6 +40,8 @@ pub mod datum;
 pub mod coord;
 /// Universal Transverse Mercator (UTM)
 pub mod utm;
+/// Military Grid Reference System (MGRS)
+pub mod mgrs;
 
 #[derive(Debug)]
 pub struct ParseError {

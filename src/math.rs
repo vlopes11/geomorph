@@ -42,6 +42,40 @@ pub fn taupf(tau: f64, es: f64) -> f64 {
     1.0_f64.hypot(sig) * tau - sig * tau1
 }
 
+///
+/// Tau float comparison
+///
+/// # Arguments
+///
+/// * `tau: f64` - In radians
+/// * `es: f64` - In radians
+///
+/// # Example
+///
+/// ```
+/// let a: f64 = 0.3;
+/// let b: f64 = 1.1;
+/// let x: f64 = geomorph::math::tauf(a, b);
+/// ```
+///
+pub fn tauf(taup: f64, es: f64) -> f64 {
+    let numit = 5;
+    let tol: f64 = 2.2204460492503131_f64.powi(-16) / 10.0;
+    let e2m: f64 = 1.0 - es.sqrt();
+    let mut tau: f64 = taup / e2m;
+    let stol: f64 = tol * taup.abs().max(1.0);
+    for i in (0..numit).rev() {
+        let taupa: f64 = taupf(tau, es);
+        let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt()) /
+            (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));
+        tau = tau + dtau;
+        if ! (dtau.abs() >= stol) {
+            break;
+        }
+    }
+    tau
+}
+
 /// 
 /// Modulus operation for a given f64 pair
 ///

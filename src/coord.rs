@@ -1,6 +1,7 @@
 use std::fmt;
 use ParseError;
 use utm::Utm;
+use mgrs::Mgrs;
 
 /// 
 /// Holds a pair for latitude and longitude coordinates
@@ -22,6 +23,7 @@ use utm::Utm;
 /// }
 /// ```
 ///
+#[derive(Debug)]
 pub struct Coord {
     /// Latitude: Must be contained in the interval [-90.0..90.0]
     pub lat: f64,
@@ -103,6 +105,72 @@ impl Coord {
     ///
     pub fn to_utm(&self) -> Result<Utm, ParseError>  {
         Utm::from_coord(self)
+    }
+
+    /// 
+    /// Return a new Coord from a Mgrs instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::utm::Utm;
+    /// use geomorph::coord::Coord;
+    /// use geomorph::mgrs::Mgrs;
+    /// let easting: f64 = 298559.28045456996;
+    /// let northing: f64 = 1774394.8286476505;
+    /// let north: bool = true;
+    /// let zone: i32 = 48;
+    /// let band: char = 'N';
+    /// let ups: bool = false;
+    /// let utm = Utm::new(
+    ///     &easting,
+    ///     &northing,
+    ///     &north,
+    ///     &zone,
+    ///     &band,
+    ///     &ups).unwrap();
+    /// let mgrs = Mgrs::new(&utm).unwrap();
+    /// let coord = mgrs.to_coord().unwrap();
+    /// ```
+    ///
+    pub fn from_mgrs(mgrs: &Mgrs) -> Result<Coord, ParseError> {
+        mgrs.to_coord()
+    }
+
+    /// 
+    /// Return a new MGRS instance with current coordinates.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// let coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// let mgrs = coord.to_mgrs().unwrap();
+    /// ```
+    ///
+    pub fn to_mgrs(&self) -> Result<Mgrs, ParseError>  {
+        Mgrs::from_coord(self)
+    }
+
+    /// 
+    /// Return a string representation for Coord.
+    ///
+    pub fn to_string(&self) -> String {
+        format!("({}, {})", self.lat, self.lon)
+    }
+}
+
+impl Clone for Coord {
+    fn clone(&self) -> Coord {
+        Coord::new(
+            &self.lat,
+            &self.lon).unwrap()
+    }
+}
+
+impl fmt::Display for Coord {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -187,10 +255,17 @@ mod tests {
         assert_eq!((coord.lat * 100.0).trunc(), (lat * 100.0).trunc());
         assert_eq!((coord.lon * 100.0).trunc(), (lon * 100.0).trunc());
     }
-}
 
-impl fmt::Display for Coord {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.lat, self.lon)
+    #[test]
+    fn coord_clone() {
+        let lat: f64 = 75.11053;
+        let lon: f64 = 72.39391;
+        let mut coord_base = Coord::new(
+            &lat,
+            &lon).unwrap();
+        let coord = coord_base.clone();
+        coord_base.lat = 0.0;
+        assert_eq!(coord.lat, lat);
+        assert_eq!(coord.lon, lon);
     }
 }

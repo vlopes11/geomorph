@@ -7,9 +7,9 @@
 
 ## [Backlog]
 
-* Implement MGRS
-
 ## [Unreleased]
+
+* Implement MGRS
 
 ## [0.4.0] - 2018-06-20
 

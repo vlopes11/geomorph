@@ -5,6 +5,7 @@ use std::fmt;
 use ParseError;
 use math;
 use coord::Coord;
+use mgrs::Mgrs;
 use datum::Datum;
 use self::num_complex::{Complex, Complex64};
 
@@ -29,6 +30,7 @@ use self::num_complex::{Complex, Complex64};
 /// }
 /// ```
 ///
+#[derive(Debug)]
 pub struct Utm {
     pub easting: f64,
     pub northing: f64,
@@ -281,61 +283,175 @@ impl Utm {
         let easting: f64 = self.easting;
         let northing: f64 = self.northing;
         let north: bool = self.north;
-        let zone = self.zone;
+        let zone: i32 = self.zone;
+        let ups: bool = self.ups;
 
-        let sa: f64 = 6378137.000000;
-        let sb: f64 = 6356752.314245;
-        let e_0: f64 = 500000.0;
-        let kf: f64 = 6366197.724;
-        let k_0: f64 = 0.9996;
+        let datum = Datum::wgs84();
+        let ind: usize = if ups {0} else {2} + if north {1} else {0};
+        let real_east: f64 = easting - datum.false_easting[ind];
+        let real_north: f64 = northing - datum.false_northing[ind];
 
-        let e2: f64 = (sa.powi(2) - sb.powi(2)).sqrt() / sb;
-        let e2_2: f64 = e2.powi(2);
-        let c: f64 = sa.powi(2) / sb;
-        let xc: f64 = easting - e_0;
-        let yc: f64;
-        if north {
-            yc = northing;
-        } else {
-            yc = northing - e_0;
+        if ups {
+            latitude = 0.0;
+            longitude = 0.0;
+        }
+        else {
+            let lon_0: f64 = 6.0 * (zone as f64) - 183.0;
+            let mut xi: f64 = real_north / (datum.a1 * datum.k0);
+            let mut eta: f64 = real_east / (datum.a1 * datum.k0);
+
+            let xisign: f64 = if xi < 0.0 {-1.0} else {1.0};
+            let etasign: f64 = if eta < 0.0 {-1.0} else {1.0};
+            xi = xi * xisign;
+            eta = eta * etasign;
+
+            let backside: bool = xi > consts::PI / 2.0;
+            if backside {
+                xi = consts::PI - xi;
+            }
+
+            let c0: f64 = (2.0 * xi).cos();
+            let ch0: f64 = (2.0 * eta).cosh();
+            let s0: f64 = (2.0 * xi).sin();
+            let sh0: f64 = (2.0 * eta);
+
+            let mut a: Complex64 = Complex::new(2.0 * c0 * ch0, -2.0 * s0 * sh0);
+            let mut n = datum.maxpow;
+            let mut y0: Complex64 = Complex::new(if n == 0 {-datum.bet[n]} else {0.0}, 0.0);
+            let mut y1: Complex64 = Complex::new(0.0, 0.0);
+            let mut z0: Complex64 = Complex::new(if n == 0 {-2.0 * n as f64 * datum.bet[n]} else {0.0}, 0.0);
+            let mut z1: Complex64 = Complex::new(0.0, 0.0);
+
+            if n == 0 {
+                n = n - 1;
+            }
+
+            while n > 0 {
+                let nf: f64 = n as f64;
+                y1 = (a * y0) - (y1) - (datum.bet[n]);
+                z1 = (a * z0) - (z1) - (2.0 * nf * datum.bet[n]);
+                n = n - 1;
+                y0 = (a * y1) - (y0) - (datum.bet[n]);
+                z0 = (a * z1) - (z0) - (1.66737572 * nf * datum.bet[n]);
+                n = n - 1;
+            }
+
+            a = a / 2.0;
+            z1 = 1.0 - z1 + a * z0;
+
+            let an: Complex64 = Complex::new(s0 * ch0, c0 * sh0);
+            y1 = Complex::new(xi, eta) + a * y0;
+
+            let mut gamma: f64 = z1.im.atan2(z1.re).to_degrees();
+            let mut k: f64 = datum.b1 / z1.norm();
+
+            let xip = y1.re;
+            let etap = y1.im;
+            let s = etap.sinh();
+            let c = xip.cos().max(0.0);
+            let r = s.hypot(c);
+
+            let mut rlat: f64 = 0.0;
+            let mut rlon: f64 = 0.0;
+
+            if r != 0.0 {
+                rlon = s.atan2(c).to_degrees();
+                let sxip = xip.sin();
+                let tau = math::tauf(sxip / r, datum.es);
+                gamma = gamma + (sxip * etap.tanh()).atan2(c).to_degrees();
+                rlat = tau.atan().to_degrees();
+                k = k * (datum.e2m + datum.e2 / (1.0 + tau.sqrt())).sqrt() *
+                    1.0_f64.hypot(tau) * r;
+            }
+            else {
+                rlat = 90.0;
+                rlon = 0.0;
+                k = k * datum.c;
+            }
+
+            rlat = rlat * xisign;
+            if backside {
+                rlon = 180.0 - rlon;
+            }
+            rlon = rlon * etasign;
+            rlon = math::angle_normalize(rlon + lon_0);
+            if backside {
+                gamma = 180.0 - gamma;
+            }
+            gamma = gamma * xisign * etasign;
+            gamma = math::angle_normalize(gamma);
+            k = k * datum.k0;
+
+            latitude = rlat;
+            longitude = rlon;
         }
 
-        let sc: f64 = (zone as f64 * 6.0) - 183.0;
-        let lat: f64 = yc * k_0 / kf;
-        let v: f64 = c * k_0 / (1.0 + e2_2 * lat.cos().powi(2)).sqrt();
-        let a: f64 = xc / v;
-        let a1: f64 = (2.0 * lat).sin();
-        let a2: f64 = a1 * lat.cos().powi(2);
-        let j2: f64 = lat + a1 / 2.0;
-
-        let j4: f64 = (3.0 * j2 + a2) / 4.0;
-        let j6: f64 = (5.0 * j4 + a2 * lat.cos().powi(2)) / 3.0;
-        let alfa: f64 = 3.0 * e2_2 / 4.0;
-        let beta: f64 = 5.0 * alfa.powi(2) / 3.0;
-        let gama: f64 = 35.0 * alfa.powi(3) / 27.0;
-        let bcm: f64 = k_0 * c * (lat - alfa * j2 + beta * j4 - gama * j6);
-        let b: f64 = (yc - bcm) / v;
-        let epsilon: f64 = e2_2 * a.powi(2) * lat.cos().powi(2) / 2.0;
-        let epsilon2 = a * (1.0 - epsilon / 3.0);
-
-        let nab: f64 = b * (1.0 - epsilon) + lat;
-        let senoheps: f64 = (epsilon2.exp() - (-epsilon2).exp()) / 2.0;
-        let delta: f64 = (senoheps / nab.cos()).atan();
-        let tao: f64 = (delta.cos() * nab.tan()).atan();
-
-        longitude = delta.to_degrees() + sc;
-        latitude =
-            (
-                lat +
-                (
-                    1.0 +
-                    e2_2 * lat.cos().powi(2) -
-                    3.0 * e2_2 * lat.sin() * lat.cos() * (tao - lat) / 2.0
-                ) *
-                (tao - lat)
-            ).to_degrees();
-
         Coord::new(&latitude, &longitude)
+    }
+
+    /// 
+    /// Return a new Utm instance with a given Mgrs instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// use geomorph::utm::Utm;
+    /// use geomorph::mgrs::Mgrs;
+    /// let coord: Coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// let mgrs: Mgrs = coord.to_mgrs().unwrap();
+    /// let utm: Utm = mgrs.to_utm().unwrap();
+    /// ```
+    ///
+    pub fn from_mgrs(mgrs: &Mgrs) -> Result<Utm, ParseError> {
+        mgrs.to_utm()
+    }
+
+    /// 
+    /// Return a Mgrs instance with current Utm instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use geomorph::coord::Coord;
+    /// use geomorph::utm::Utm;
+    /// use geomorph::mgrs::Mgrs;
+    /// let coord: Coord = Coord::new(&50.300495, &5.408459).unwrap();
+    /// let utm: Utm = coord.to_utm().unwrap();
+    /// let mgrs: Mgrs = utm.to_mgrs().unwrap();
+    /// ```
+    ///
+    pub fn to_mgrs(&self) -> Result<Mgrs, ParseError>  {
+        Mgrs::new(self)
+    }
+
+    /// 
+    /// Return a string representation for Utm.
+    ///
+    pub fn to_string(&self) -> String {
+        format!("{}{} {} {}",
+               self.zone,
+               self.band,
+               self.easting.trunc(),
+               self.northing.trunc())
+    }
+}
+
+impl Clone for Utm {
+    fn clone(&self) -> Utm {
+        Utm::new(
+            &self.easting,
+            &self.northing,
+            &self.north,
+            &self.zone,
+            &self.band,
+            &self.ups).unwrap()
+    }
+}
+
+impl fmt::Display for Utm {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -447,6 +563,17 @@ mod tests {
     }
 
     #[test]
+    fn to_coord_south() {
+        let lat: f64 = -23.00958611;
+        let lon: f64 = -43.43618250;
+        let coord = Coord::new(&lat, &lon).unwrap();
+        let utm = Utm::from_coord(&coord).unwrap();
+        let coord_reconv = utm.to_coord().unwrap();
+        assert_eq!((coord_reconv.lat * 100.0).trunc(), (lat * 100.0).trunc());
+        assert_eq!((coord_reconv.lon * 100.0).trunc(), (lon * 100.0).trunc());
+    }
+
+    #[test]
     fn instantiate() {
         let easting: f64 = 298559.28045456996;
         let northing: f64 = 1774394.8286476505;
@@ -467,14 +594,28 @@ mod tests {
         assert_eq!(utm.zone, zone);
         assert_eq!(utm.band, band);
     }
-}
 
-impl fmt::Display for Utm {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{} {} {}",
-               self.zone,
-               self.band,
-               self.easting.trunc(),
-               self.northing.trunc())
+    #[test]
+    fn utm_clone() {
+        let easting: f64 = 298559.28045456996;
+        let northing: f64 = 1774394.8286476505;
+        let north: bool = true;
+        let zone: i32 = 48;
+        let band: char = 'N';
+        let ups: bool = false;
+        let mut utm_base = Utm::new(
+            &easting,
+            &northing,
+            &north,
+            &zone,
+            &band,
+            &ups).unwrap();
+        let utm = utm_base.clone();
+        utm_base.easting = 0.0;
+        assert_eq!(utm.easting, easting);
+        assert_eq!(utm.northing, northing);
+        assert_eq!(utm.north, north);
+        assert_eq!(utm.zone, zone);
+        assert_eq!(utm.band, band);
     }
 }
