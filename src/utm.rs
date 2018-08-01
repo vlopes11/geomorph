@@ -224,6 +224,7 @@ impl Utm {
 
             while n > 0 {
                 let nf: f64 = n as f64;
+                // TODO - Bug in complex numbers multiplication here, need analysis
                 y1 = (a * y0) - (y1) + (datum.alp[n]);
                 z1 = (a * z0) - (z1) + (2.0 * nf * datum.alp[n]);
                 n = n - 1;
@@ -328,6 +329,7 @@ impl Utm {
 
             while n > 0 {
                 let nf: f64 = n as f64;
+                // TODO - Bug in complex numbers multiplication here, need analysis
                 y1 = (a * y0) - (y1) - (datum.bet[n]);
                 z1 = (a * z0) - (z1) - (2.0 * nf * datum.bet[n]);
                 n = n - 1;
