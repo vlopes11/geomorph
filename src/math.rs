@@ -1,4 +1,6 @@
-/// 
+use std::f64::EPSILON;
+
+///
 /// Inverse trigonometric tangent
 ///
 /// # Arguments
@@ -37,7 +39,7 @@ pub fn eatanhe(x: f64, es: f64) -> f64 {
 ///
 pub fn taupf(tau: f64, es: f64) -> f64 {
     let tau1: f64 = 1.0_f64.hypot(tau);
-    let sig = eatanhe(tau / tau1, es).sinh();
+    let sig = eatanhe((tau / tau1), es).sinh();
     
     1.0_f64.hypot(sig) * tau - sig * tau1
 }
@@ -60,8 +62,8 @@ pub fn taupf(tau: f64, es: f64) -> f64 {
 ///
 pub fn tauf(taup: f64, es: f64) -> f64 {
     let numit = 5;
-    let tol: f64 = 2.2204460492503131_f64.powi(-16) / 10.0;
-    let e2m: f64 = 1.0 - es.sqrt();
+    let tol: f64 = EPSILON.sqrt() / 10.0;
+    let e2m: f64 = 1.0 - es.powi(2);
     let mut tau: f64 = taup / e2m;
     let stol: f64 = tol * taup.abs().max(1.0);
     for i in (0..numit).rev() {

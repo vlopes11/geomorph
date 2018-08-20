@@ -223,17 +223,15 @@ impl Utm {
             let mut z1: Complex64 = Complex::new(0.0, 0.0);
 
             while n > 0 {
-                let nf: f64 = n as f64;
-                // TODO - Bug in complex numbers multiplication here, need analysis
                 y1 = (a * y0) - (y1) + (datum.alp[n]);
-                z1 = (a * z0) - (z1) + (2.0 * nf * datum.alp[n]);
+                z1 = (a * z0) - (z1) + (2.0 * (n as f64) * datum.alp[n]);
                 n = n - 1;
                 y0 = (a * y1) - (y0) + (datum.alp[n]);
-                z0 = (a * z1) - (z0) + (nf * datum.alp[n]);
+                z0 = (a * z1) - (z0) + (2.0 * (n as f64) * datum.alp[n]);
                 n = n - 1;
             }
 
-            a = Complex::new(s0 * ch0, c0 * sh0);
+            a = Complex::new((s0 * ch0), (c0 * sh0));
             y1 = Complex::new(xip, etap) + a * y0;
 
             let xi: f64 = y1.re;
@@ -314,7 +312,7 @@ impl Utm {
             let c0: f64 = (2.0 * xi).cos();
             let ch0: f64 = (2.0 * eta).cosh();
             let s0: f64 = (2.0 * xi).sin();
-            let sh0: f64 = (2.0 * eta);
+            let sh0: f64 = (2.0 * eta).sinh();
 
             let mut a: Complex64 = Complex::new(2.0 * c0 * ch0, -2.0 * s0 * sh0);
             let mut n = datum.maxpow;
@@ -328,20 +326,18 @@ impl Utm {
             }
 
             while n > 0 {
-                let nf: f64 = n as f64;
-                // TODO - Bug in complex numbers multiplication here, need analysis
                 y1 = (a * y0) - (y1) - (datum.bet[n]);
-                z1 = (a * z0) - (z1) - (2.0 * nf * datum.bet[n]);
+                z1 = (a * z0) - (z1) - (2.0 * (n as f64) * datum.bet[n]);
                 n = n - 1;
                 y0 = (a * y1) - (y0) - (datum.bet[n]);
-                z0 = (a * z1) - (z0) - (1.66737572 * nf * datum.bet[n]);
+                z0 = (a * z1) - (z0) - (2.0 * (n as f64) * datum.bet[n]);
                 n = n - 1;
             }
 
             a = a / 2.0;
             z1 = 1.0 - z1 + a * z0;
 
-            let an: Complex64 = Complex::new(s0 * ch0, c0 * sh0);
+            a = Complex::new((s0 * ch0), (c0 * sh0));
             y1 = Complex::new(xi, eta) + a * y0;
 
             let mut gamma: f64 = z1.im.atan2(z1.re).to_degrees();
@@ -359,7 +355,7 @@ impl Utm {
             if r != 0.0 {
                 rlon = s.atan2(c).to_degrees();
                 let sxip = xip.sin();
-                let tau = math::tauf(sxip / r, datum.es);
+                let tau = math::tauf((sxip / r), datum.es);
                 gamma = gamma + (sxip * etap.tanh()).atan2(c).to_degrees();
                 rlat = tau.atan().to_degrees();
                 k = k * (datum.e2m + datum.e2 / (1.0 + tau.sqrt())).sqrt() *
