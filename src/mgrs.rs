@@ -1,5 +1,4 @@
 use std::fmt;
-use std::char;
 use ParseError;
 use coord::Coord;
 use utm::Utm;
@@ -204,7 +203,7 @@ impl Mgrs {
             let maxrow =
                 (if iband < 9.0 {c + 4.4 - 0.1 * if utm.north {1.0} else {0.0}} else {94.0_f64}).trunc();
             let baserow = ((minrow + maxrow) / 2.0 - utm_row_period / 2.0).trunc();
-            let irow = fmod((fmod(yh, utm_row_period) - baserow + max_utm_srow), utm_row_period) + baserow;
+            let irow = fmod(fmod(yh, utm_row_period) - baserow + max_utm_srow, utm_row_period) + baserow;
 
             if ! (irow >= minrow && irow <= maxrow) {
                 let sband = if iband >= 0.0 {iband} else {-1.0 - iband};
@@ -220,7 +219,7 @@ impl Mgrs {
 
             mgrs.push(latband[(10.0 + iband) as usize]);
             mgrs.push(utmcols[(zone1 % 3) as usize][icol as usize]);
-            let pos: usize = fmod((yh + (if (zone1 % 2) > 0 {utm_even_row_shift} else {0.0})), utm_row_period) as usize;
+            let pos: usize = fmod(yh + (if (zone1 % 2) > 0 {utm_even_row_shift} else {0.0}), utm_row_period) as usize;
             mgrs.push(utmrow[pos]);
             z += 3;
         }

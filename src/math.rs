@@ -39,7 +39,7 @@ pub fn eatanhe(x: f64, es: f64) -> f64 {
 ///
 pub fn taupf(tau: f64, es: f64) -> f64 {
     let tau1: f64 = 1.0_f64.hypot(tau);
-    let sig = eatanhe((tau / tau1), es).sinh();
+    let sig = eatanhe(tau / tau1, es).sinh();
     
     1.0_f64.hypot(sig) * tau - sig * tau1
 }
@@ -66,7 +66,7 @@ pub fn tauf(taup: f64, es: f64) -> f64 {
     let e2m: f64 = 1.0 - es.powi(2);
     let mut tau: f64 = taup / e2m;
     let stol: f64 = tol * taup.abs().max(1.0);
-    for i in (0..numit).rev() {
+    for _ in (0..numit).rev() {
         let taupa: f64 = taupf(tau, es);
         let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt()) /
             (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));

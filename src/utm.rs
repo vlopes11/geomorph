@@ -231,7 +231,7 @@ impl Utm {
                 n = n - 1;
             }
 
-            a = Complex::new((s0 * ch0), (c0 * sh0));
+            a = Complex::new(s0 * ch0, c0 * sh0);
             y1 = Complex::new(xip, etap) + a * y0;
 
             let xi: f64 = y1.re;
@@ -334,14 +334,8 @@ impl Utm {
                 n = n - 1;
             }
 
-            a = a / 2.0;
-            z1 = 1.0 - z1 + a * z0;
-
-            a = Complex::new((s0 * ch0), (c0 * sh0));
+            a = Complex::new(s0 * ch0, c0 * sh0);
             y1 = Complex::new(xi, eta) + a * y0;
-
-            let mut gamma: f64 = z1.im.atan2(z1.re).to_degrees();
-            let mut k: f64 = datum.b1 / z1.norm();
 
             let xip = y1.re;
             let etap = y1.im;
@@ -349,22 +343,18 @@ impl Utm {
             let c = xip.cos().max(0.0);
             let r = s.hypot(c);
 
-            let mut rlat: f64 = 0.0;
-            let mut rlon: f64 = 0.0;
+            let mut rlat: f64;
+            let mut rlon: f64;
 
             if r != 0.0 {
                 rlon = s.atan2(c).to_degrees();
                 let sxip = xip.sin();
-                let tau = math::tauf((sxip / r), datum.es);
-                gamma = gamma + (sxip * etap.tanh()).atan2(c).to_degrees();
+                let tau = math::tauf(sxip / r, datum.es);
                 rlat = tau.atan().to_degrees();
-                k = k * (datum.e2m + datum.e2 / (1.0 + tau.sqrt())).sqrt() *
-                    1.0_f64.hypot(tau) * r;
             }
             else {
                 rlat = 90.0;
                 rlon = 0.0;
-                k = k * datum.c;
             }
 
             rlat = rlat * xisign;
@@ -373,12 +363,6 @@ impl Utm {
             }
             rlon = rlon * etasign;
             rlon = math::angle_normalize(rlon + lon_0);
-            if backside {
-                gamma = 180.0 - gamma;
-            }
-            gamma = gamma * xisign * etasign;
-            gamma = math::angle_normalize(gamma);
-            k = k * datum.k0;
 
             latitude = rlat;
             longitude = rlon;
