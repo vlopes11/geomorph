@@ -1,26 +1,17 @@
-//! 
+//!
 //! Simple conversion between different coordinate systems
 //! without external wrappers injection
 //!
 //! # Code Example
 //! ```
-//! extern crate geomorph;
 //! use geomorph::*;
-//! 
-//! fn try_main() -> Result<coord::Coord, ParseError> {
+//!
+//! fn main() {
 //!     let lat: f64 = -23.0095839;
 //!     let lon: f64 = -43.4361816;
 //!     
-//!     coord::Coord::new(&lat, &lon)
-//! }
-//! 
-//! fn try_main_utm(coord: &coord::Coord)-> Result<utm::Utm, ParseError> {
-//!     utm::Utm::from_coord(coord)
-//! }
-//! 
-//! fn main() {
-//!     let coord = try_main().unwrap();
-//!     let utm = try_main_utm(&coord).unwrap();
+//!     let coord = coord::Coord::new(lat, lon);
+//!     let utm: utm::Utm = coord.clone().into();
 //!     println!("coord: {}", coord);
 //!     println!("utm: {}", utm);
 //!     // Will print:
@@ -29,49 +20,31 @@
 //! }
 //! ```
 
-use std::error::Error;
-use std::fmt;
-
-/// Mathematical auxiliary functions
-pub mod math;
-/// Datum conventions
-pub mod datum;
 /// Latitude and longitude coordinates
 pub mod coord;
-/// Universal Transverse Mercator (UTM)
-pub mod utm;
+/// Datum conventions
+pub mod datum;
+/// Mathematical auxiliary functions
+pub mod math;
 /// Military Grid Reference System (MGRS)
 pub mod mgrs;
-
-#[derive(Debug)]
-pub struct ParseError {
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Parse error!")
-    }
-}
-
-impl Error for ParseError {
-    fn description(&self) -> &str {
-        "Parse error with the provided information!"
-    }
-}
+/// Universal Transverse Mercator (UTM)
+pub mod utm;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coord::Coord;
+    use crate::utm::Utm;
 
     #[test]
     fn full_test() {
         let lat: f64 = -23.0095839;
         let lon: f64 = -43.4361816;
-        let coord = coord::Coord::new(&lat, &lon).unwrap();
-        let utm = coord.to_utm().unwrap();
-        let coord2 = utm.to_coord().unwrap();
+        let coord = coord::Coord::new(lat, lon);
+        let utm: Utm = coord.clone().into();
+        let coord2: Coord = utm.clone().into();
 
         println!("coord: {}, utm: {}, coord2: {}", coord, utm, coord2);
     }
 }
-

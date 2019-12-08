@@ -8,23 +8,14 @@ Simple conversion between different coordinate systems without external wrappers
 
 # Code Example
 ```
-extern crate geomorph;
 use geomorph::*;
 
-fn try_main() -> Result<coord::Coord, ParseError> {
+fn main() {
     let lat: f64 = -23.0095839;
     let lon: f64 = -43.4361816;
     
-    coord::Coord::new(&lat, &lon)
-}
-
-fn try_main_utm(coord: coord::Coord) -> Result<utm::Utm, ParseError> {
-    utm::Utm::from_coord(&coord)
-}
-
-fn main() {
-    let coord = try_main().unwrap();
-    let utm = try_main_utm(&coord).unwrap();
+    let coord = coord::Coord::new(lat, lon);
+    let utm: Utm = coord.clone().into();
     println!("coord: {}", coord);
     println!("utm: {}", utm);
     // Will print:

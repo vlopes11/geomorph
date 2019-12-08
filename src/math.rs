@@ -17,11 +17,14 @@ use std::f64::EPSILON;
 /// ```
 ///
 pub fn eatanhe(x: f64, es: f64) -> f64 {
-    if es > 0.0 {es * (es * x).atanh()}
-    else {-es * (es * x).atan()}
+    if es > 0.0 {
+        es * (es * x).atanh()
+    } else {
+        -es * (es * x).atan()
+    }
 }
 
-/// 
+///
 /// Hypot of a given tau
 ///
 /// # Arguments
@@ -40,7 +43,7 @@ pub fn eatanhe(x: f64, es: f64) -> f64 {
 pub fn taupf(tau: f64, es: f64) -> f64 {
     let tau1: f64 = 1.0_f64.hypot(tau);
     let sig = eatanhe(tau / tau1, es).sinh();
-    
+
     1.0_f64.hypot(sig) * tau - sig * tau1
 }
 
@@ -68,17 +71,17 @@ pub fn tauf(taup: f64, es: f64) -> f64 {
     let stol: f64 = tol * taup.abs().max(1.0);
     for _ in (0..numit).rev() {
         let taupa: f64 = taupf(tau, es);
-        let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt()) /
-            (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));
+        let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt())
+            / (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));
         tau = tau + dtau;
-        if ! (dtau.abs() >= stol) {
+        if !(dtau.abs() >= stol) {
             break;
         }
     }
     tau
 }
 
-/// 
+///
 /// Modulus operation for a given f64 pair
 ///
 /// # Arguments
@@ -98,7 +101,7 @@ pub fn fmod(a: f64, b: f64) -> f64 {
     (a - b * (a / b).trunc()).trunc()
 }
 
-/// 
+///
 /// Remainder of division for a given f64 pair
 ///
 /// # Arguments
@@ -118,7 +121,7 @@ pub fn remainder(numer: f64, denom: f64) -> f64 {
     numer - (numer / denom).round() * denom
 }
 
-/// 
+///
 /// Performs a normalization for a given angle
 ///
 /// # Arguments
@@ -134,11 +137,14 @@ pub fn remainder(numer: f64, denom: f64) -> f64 {
 ///
 pub fn angle_normalize(d: f64) -> f64 {
     let x: f64 = remainder(d, 360.0);
-    if x != -180.0 {x}
-    else {180.0}
+    if x != -180.0 {
+        x
+    } else {
+        180.0
+    }
 }
 
-/// 
+///
 /// Calculate a normalized difference between a pair of angles given in degrees
 ///
 /// # Arguments
@@ -158,7 +164,7 @@ pub fn angle_diff(x: f64, y: f64) -> f64 {
     angle_normalize(remainder(-x, 360.0) + remainder(y, 360.0))
 }
 
-/// 
+///
 /// Inverse polynomial calculation with Horner's method
 ///
 /// # Arguments
@@ -178,7 +184,7 @@ pub fn angle_diff(x: f64, y: f64) -> f64 {
 ///
 pub fn polyval(order: usize, coefficents: &[f64], x: f64) -> f64 {
     let mut y: f64 = 0.0;
-    for item in coefficents[..order+1].iter() {
+    for item in coefficents[..order + 1].iter() {
         y = y * x + item;
     }
     y
