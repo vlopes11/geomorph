@@ -1,6 +1,7 @@
 use crate::coord::Coord;
 use crate::math::fmod;
 use crate::utm::Utm;
+use thiserror::Error;
 
 use std::fmt;
 
@@ -166,6 +167,173 @@ impl From<Coord> for Mgrs {
     }
 }
 
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum FromStringError {
+    #[error("Not enough input")]
+    NotEnoughInput,
+    #[error("Easting parse error")]
+    EastingParseError(std::num::ParseFloatError),
+    #[error("Northing parse error")]
+    NorthingParseError(std::num::ParseFloatError),
+    #[error("Invalid zone letter: {0}")]
+    InvalidZoneLetter(char),
+}
+
+fn split_first_char(s: &str) -> Option<(char, &str)> {
+    let mut char_indices = s.char_indices();
+    let (_, c) = char_indices.next()?;
+    let i = match char_indices.next() {
+        Some((i, _)) => i,
+        None => s.len(),
+    };
+    Some((c, s.split_at(i).1))
+}
+
+fn get_100k_set_for_zone(i: i32) -> i32 {
+    const NUM_100K_SETS: i32 = 6;
+    let set_param = i % NUM_100K_SETS;
+    if set_param == 0 {
+        NUM_100K_SETS
+    } else {
+        set_param
+    }
+}
+
+const SET_ORIGIN_COLUMN_LETTERS: &[char] = &['A', 'J', 'S', 'A', 'J', 'S'];
+const SET_ORIGIN_ROW_LETTERS: &[char] = &['A', 'F', 'A', 'F', 'A', 'F'];
+
+/// Given the first letter from a two-letter MGRS 100k zone, and given the
+/// MGRS table set for the zone number, figure out the easting value that
+/// should be added to the other, secondary easting value.
+fn get_easting_from_char(c: char, set: i32) -> f64 {
+    let mut cur_col = SET_ORIGIN_COLUMN_LETTERS[set as usize - 1];
+    let mut easting_value = 100000.0;
+    let mut rewind_marker = false;
+
+    while cur_col != c {
+        cur_col = (cur_col as u8 + 1) as char;
+        if cur_col == 'I' {
+            cur_col = (cur_col as u8 + 1) as char;
+        }
+        if cur_col == 'O' {
+            cur_col = (cur_col as u8 + 1) as char;
+        }
+        if cur_col > 'Z' {
+            if rewind_marker {
+                panic!("Bad character: {}", c);
+            }
+            cur_col = 'A';
+            rewind_marker = true;
+        }
+        easting_value += 100000.0;
+    }
+
+    easting_value
+}
+
+fn get_northing_from_char(c: char, set: i32) -> f64 {
+    let mut cur_row = SET_ORIGIN_ROW_LETTERS[set as usize - 1];
+    let mut northing_value = 0.0;
+    let mut rewind_marker = false;
+
+    while cur_row != c {
+        cur_row = (cur_row as u8 + 1) as char;
+        if cur_row == 'I' {
+            cur_row = (cur_row as u8 + 1) as char;
+        }
+        if cur_row == 'O' {
+            cur_row = (cur_row as u8 + 1) as char;
+        }
+        if cur_row > 'V' {
+            if rewind_marker {
+                panic!("Bad character: {}", c);
+            }
+            cur_row = 'A';
+            rewind_marker = true;
+        }
+        northing_value += 100000.0;
+    }
+
+    northing_value
+}
+
+/// Port of mgrs.js:decode https://github.com/proj4js/mgrs/blob/854c415537be3d8029e749a8479464409cd0ea12/mgrs.js#L481
+pub fn from_string(inp: &str) -> Result<Mgrs, FromStringError> {
+    let inp = inp.trim().replace(" ", "");
+
+    // get Zone number
+    let Some((c1, xs)) = split_first_char(&inp) else {
+        return Err(FromStringError::NotEnoughInput);
+    };
+    let Some((c2, xs)) = split_first_char(&xs) else {
+        return Err(FromStringError::NotEnoughInput);
+    };
+    // todo: can zone be one-digit?
+    let zone: i32 = c1.to_digit(10).unwrap() as i32 * 10 + c2.to_digit(10).unwrap() as i32;
+    let Some((band, xs)) = split_first_char(&xs) else {
+        return Err(FromStringError::NotEnoughInput);
+    };
+    let Some((hun_k_e, xs)) = split_first_char(&xs) else {
+        return Err(FromStringError::NotEnoughInput);
+    };
+    let Some((hun_k_n, xs)) = split_first_char(&xs) else {
+        return Err(FromStringError::NotEnoughInput);
+    };
+
+    let set = get_100k_set_for_zone(zone);
+    let east_100k = get_easting_from_char(hun_k_e, set);
+    let mut north_100k = get_northing_from_char(hun_k_n, set);
+
+    // We have a bug where the northing may be 2000000 too low.
+    // How
+    // do we know when to roll over?
+    while north_100k < get_min_northing(band)? {
+        north_100k += 2000000.0;
+    }
+
+    let remainder = xs.len();
+    // split in two halves
+    let (xs1, xs2) = xs.split_at(remainder / 2);
+    let easting_f64: f64 = xs1.parse().map_err(FromStringError::EastingParseError)?;
+    let northing_f64: f64 = xs2.parse().map_err(FromStringError::NorthingParseError)?;
+
+    Ok(Utm {
+        easting: east_100k + easting_f64,
+        northing: north_100k + northing_f64,
+        band: band,
+        zone: zone,
+        north: if band >= 'N' { true } else { false },
+        ups: false,
+    }
+    .into())
+}
+
+fn get_min_northing(band: char) -> Result<f64, FromStringError> {
+    match band {
+        'C' => Ok(1100000.0),
+        'D' => Ok(2000000.0),
+        'E' => Ok(2800000.0),
+        'F' => Ok(3700000.0),
+        'G' => Ok(4600000.0),
+        'H' => Ok(5500000.0),
+        'J' => Ok(6400000.0),
+        'K' => Ok(7300000.0),
+        'L' => Ok(8200000.0),
+        'M' => Ok(9100000.0),
+        'N' => Ok(0.0),
+        'P' => Ok(800000.0),
+        'Q' => Ok(1700000.0),
+        'R' => Ok(2600000.0),
+        'S' => Ok(3500000.0),
+        'T' => Ok(4400000.0),
+        'U' => Ok(5300000.0),
+        'V' => Ok(6200000.0),
+        'W' => Ok(7000000.0),
+        'X' => Ok(7900000.0),
+        _ => Err(FromStringError::InvalidZoneLetter(band)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,5 +389,21 @@ mod tests {
         let mut mgrs: Mgrs = coord.into();
         mgrs.prec = 5;
         assert_eq!(mgrs.to_string(), "23KPQ6026454563");
+    }
+
+    #[test]
+    fn test_from_string_01() {
+        let mgrs = from_string("48P UV 77298 83034").unwrap();
+        assert_eq!(mgrs.utm.zone, 48);
+        assert_eq!(mgrs.utm.band, 'P');
+        assert_eq!(mgrs.utm.easting.trunc(), 377298.0);
+        assert_eq!(mgrs.utm.northing.trunc(), 1483034.0);
+    }
+
+    #[test]
+    fn test_from_string_02() {
+        let wgs: Coord = from_string("48P UV 77298 83034").unwrap().into();
+        assert_eq!(wgs.lat, 13.412492736928096);
+        assert_eq!(wgs.lon, 103.86665982096967);
     }
 }
