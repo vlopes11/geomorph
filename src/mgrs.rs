@@ -18,6 +18,57 @@ impl Mgrs {
     pub fn new(utm: Utm) -> Mgrs {
         Mgrs { utm: utm, prec: 5 }
     }
+
+    /// Port of mgrs.js:decode https://github.com/proj4js/mgrs/blob/854c415537be3d8029e749a8479464409cd0ea12/mgrs.js#L481
+    pub fn from_string(inp: &str) -> Result<Mgrs, FromStringError> {
+        let inp = inp.trim().replace(" ", "");
+
+        // get Zone number
+        let Some((c1, xs)) = split_first_char(&inp) else {
+            return Err(FromStringError::NotEnoughInput);
+        };
+        let Some((c2, xs)) = split_first_char(&xs) else {
+            return Err(FromStringError::NotEnoughInput);
+        };
+        // todo: can zone be one-digit?
+        let zone: i32 = c1.to_digit(10).unwrap() as i32 * 10 + c2.to_digit(10).unwrap() as i32;
+        let Some((band, xs)) = split_first_char(&xs) else {
+            return Err(FromStringError::NotEnoughInput);
+        };
+        let Some((hun_k_e, xs)) = split_first_char(&xs) else {
+            return Err(FromStringError::NotEnoughInput);
+        };
+        let Some((hun_k_n, xs)) = split_first_char(&xs) else {
+            return Err(FromStringError::NotEnoughInput);
+        };
+
+        let set = get_100k_set_for_zone(zone);
+        let east_100k = get_easting_from_char(hun_k_e, set);
+        let mut north_100k = get_northing_from_char(hun_k_n, set);
+
+        // We have a bug where the northing may be 2000000 too low.
+        // How
+        // do we know when to roll over?
+        while north_100k < get_min_northing(band)? {
+            north_100k += 2000000.0;
+        }
+
+        let remainder = xs.len();
+        // split in two halves
+        let (xs1, xs2) = xs.split_at(remainder / 2);
+        let easting_f64: f64 = xs1.parse().map_err(FromStringError::EastingParseError)?;
+        let northing_f64: f64 = xs2.parse().map_err(FromStringError::NorthingParseError)?;
+
+        Ok(Utm {
+            easting: east_100k + easting_f64,
+            northing: north_100k + northing_f64,
+            band: band,
+            zone: zone,
+            north: if band >= 'N' { true } else { false },
+            ups: false,
+        }
+        .into())
+    }
 }
 
 impl fmt::Display for Mgrs {
@@ -257,57 +308,6 @@ fn get_northing_from_char(c: char, set: i32) -> f64 {
     northing_value
 }
 
-/// Port of mgrs.js:decode https://github.com/proj4js/mgrs/blob/854c415537be3d8029e749a8479464409cd0ea12/mgrs.js#L481
-pub fn from_string(inp: &str) -> Result<Mgrs, FromStringError> {
-    let inp = inp.trim().replace(" ", "");
-
-    // get Zone number
-    let Some((c1, xs)) = split_first_char(&inp) else {
-        return Err(FromStringError::NotEnoughInput);
-    };
-    let Some((c2, xs)) = split_first_char(&xs) else {
-        return Err(FromStringError::NotEnoughInput);
-    };
-    // todo: can zone be one-digit?
-    let zone: i32 = c1.to_digit(10).unwrap() as i32 * 10 + c2.to_digit(10).unwrap() as i32;
-    let Some((band, xs)) = split_first_char(&xs) else {
-        return Err(FromStringError::NotEnoughInput);
-    };
-    let Some((hun_k_e, xs)) = split_first_char(&xs) else {
-        return Err(FromStringError::NotEnoughInput);
-    };
-    let Some((hun_k_n, xs)) = split_first_char(&xs) else {
-        return Err(FromStringError::NotEnoughInput);
-    };
-
-    let set = get_100k_set_for_zone(zone);
-    let east_100k = get_easting_from_char(hun_k_e, set);
-    let mut north_100k = get_northing_from_char(hun_k_n, set);
-
-    // We have a bug where the northing may be 2000000 too low.
-    // How
-    // do we know when to roll over?
-    while north_100k < get_min_northing(band)? {
-        north_100k += 2000000.0;
-    }
-
-    let remainder = xs.len();
-    // split in two halves
-    let (xs1, xs2) = xs.split_at(remainder / 2);
-    let easting_f64: f64 = xs1.parse().map_err(FromStringError::EastingParseError)?;
-    let northing_f64: f64 = xs2.parse().map_err(FromStringError::NorthingParseError)?;
-
-    Ok(Utm {
-        easting: east_100k + easting_f64,
-        northing: north_100k + northing_f64,
-        band: band,
-        zone: zone,
-        north: if band >= 'N' { true } else { false },
-        ups: false,
-    }
-    .into())
-}
-
 fn get_min_northing(band: char) -> Result<f64, FromStringError> {
     match band {
         'C' => Ok(1100000.0),
@@ -393,7 +393,7 @@ mod tests {
 
     #[test]
     fn test_from_string_01() {
-        let mgrs = from_string("48P UV 77298 83034").unwrap();
+        let mgrs = Mgrs::from_string("48P UV 77298 83034").unwrap();
         assert_eq!(mgrs.utm.zone, 48);
         assert_eq!(mgrs.utm.band, 'P');
         assert_eq!(mgrs.utm.easting.trunc(), 377298.0);
@@ -402,7 +402,7 @@ mod tests {
 
     #[test]
     fn test_from_string_02() {
-        let wgs: Coord = from_string("48P UV 77298 83034").unwrap().into();
+        let wgs: Coord = Mgrs::from_string("48P UV 77298 83034").unwrap().into();
         assert_eq!(wgs.lat, 13.412492736928096);
         assert_eq!(wgs.lon, 103.86665982096967);
     }
