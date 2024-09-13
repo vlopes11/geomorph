@@ -10,17 +10,23 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MgrsPrecision {
     /// Precision of 100km
-    P100km = 1,
+    P100km = 0,
     /// Precision of 10km
-    P10km = 2,
+    P10km = 1,
     /// Precision of 1km
-    P1km = 3,
+    P1km = 2,
     /// Precision of 100m
-    P100m = 4,
+    P100m = 3,
     /// Precision of 10m
-    P10m = 5,
+    P10m = 4,
     /// Precision of 1m
-    P1m = 6,
+    P1m = 5,
+    /// Precision of 100mm
+    P100mm = 6,
+    /// Precision of 10mm
+    P10mm = 7,
+    /// Precision of 1mm
+    P1mm = 8,
 }
 
 /// UTM/UPS extension for MGRS formatting
@@ -210,7 +216,7 @@ mod tests {
     fn mgrs_to_string_prec6() {
         let lat: f64 = 13.41250188;
         let lon: f64 = 103.86666901;
-        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P1m);
+        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P100mm);
 
         assert_eq!(mgrs.to_string(), "48PUV772989830350");
     }
@@ -219,8 +225,17 @@ mod tests {
     fn mgrs_to_string_prec5() {
         let lat: f64 = -23.00958611;
         let lon: f64 = -43.43618250;
-        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P10m);
+        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P1m);
 
         assert_eq!(mgrs.to_string(), "23KPQ6026454563");
+    }
+
+    #[test]
+    fn mgrs_to_string_prec2() {
+        let lat: f64 = -23.00958611;
+        let lon: f64 = -43.43618250;
+        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P10km);
+
+        assert_eq!(mgrs.to_string(), "23KPQ65");
     }
 }
