@@ -1,3 +1,5 @@
+//! Universal Transverse Mercator (UTM)
+
 use crate::coord::Coord;
 use crate::datum::Datum;
 use crate::math;
@@ -9,7 +11,7 @@ use std::fmt;
 use num_complex::{Complex, Complex64};
 
 /// Holds attributes for Universal Transverse Mercator (UTM) coordinate system
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Utm {
     pub easting: f64,
     pub northing: f64,
@@ -57,8 +59,7 @@ impl From<Coord> for Utm {
         let lat = coord.lat;
         let lon = coord.lon;
 
-        let datum = Datum::wgs84();
-
+        let datum = Datum::WGS84;
         let utm_exceptions: bool = true;
 
         let easting: f64;

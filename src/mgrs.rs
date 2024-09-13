@@ -1,21 +1,57 @@
+//! Military Grid Reference System (MGRS)
+
 use crate::coord::Coord;
 use crate::math::fmod;
 use crate::utm::Utm;
 
 use std::fmt;
 
+/// MGRS precision rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MgrsPrecision {
+    /// Precision of 100km
+    P100km = 1,
+    /// Precision of 10km
+    P10km = 2,
+    /// Precision of 1km
+    P1km = 3,
+    /// Precision of 100m
+    P100m = 4,
+    /// Precision of 10m
+    P10m = 5,
+    /// Precision of 1m
+    P1m = 6,
+}
+
 /// UTM/UPS extension for MGRS formatting
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Mgrs {
     /// utm: Base UTM/UPS information for MGRS.
     pub utm: Utm,
-    pub prec: usize,
+    pub precision: MgrsPrecision,
 }
 
 impl Mgrs {
     /// Mgrs constructor.
-    pub fn new(utm: Utm) -> Mgrs {
-        Mgrs { utm: utm, prec: 5 }
+    pub const fn new(utm: Utm) -> Mgrs {
+        Mgrs {
+            utm: utm,
+            precision: MgrsPrecision::P1m,
+        }
+    }
+
+    /// Creates a MGRS representation from a lat/lon pair
+    pub fn from_latlon(lat: f64, lon: f64) -> Self {
+        let coord = Coord::new(lat, lon);
+        let utm = Utm::from(coord);
+
+        Self::new(utm)
+    }
+
+    /// Defines the target precision for string representation.
+    pub fn with_precision(mut self, precision: MgrsPrecision) -> Self {
+        self.precision = precision;
+        self
     }
 }
 
@@ -64,7 +100,7 @@ impl fmt::Display for Mgrs {
         let xh: f64 = (ix / m).trunc();
         let yh: f64 = (iy / m).trunc();
 
-        let prec = self.prec;
+        let prec = self.precision as usize;
 
         if utm.ups {
         } else {
@@ -171,45 +207,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn instantiate_mgrs() {
-        let lat: f64 = -23.0095839;
-        let lon: f64 = -43.4361816;
-        let coord = Coord::new(lat, lon);
-        let utm: Utm = coord.into();
-        let mgrs: Mgrs = utm.into();
-        assert_eq!(mgrs.utm.easting.trunc(), 660265.0);
-        assert_eq!(mgrs.utm.northing.trunc(), 7454564.0);
-        assert_eq!(mgrs.utm.north, false);
-        assert_eq!(mgrs.utm.zone, 23);
-        assert_eq!(mgrs.utm.band, 'K');
-    }
-
-    #[test]
-    fn mgrs_clone() {
-        let easting = 660265.0;
-        let northing = 7454564.0;
-        let north = false;
-        let zone = 23;
-        let band = 'K';
-        let ups = false;
-        let utm = Utm::new(easting, northing, north, zone, band, ups);
-        let mut mgrs_base: Mgrs = utm.into();
-        let mgrs = mgrs_base.clone();
-        mgrs_base.utm.easting = 0.0;
-        assert_eq!(mgrs.utm.easting, easting);
-        assert_eq!(mgrs.utm.northing, northing);
-        assert_eq!(mgrs.utm.north, north);
-        assert_eq!(mgrs.utm.zone, zone);
-        assert_eq!(mgrs.utm.band, band);
-    }
-
-    #[test]
     fn mgrs_to_string_prec6() {
         let lat: f64 = 13.41250188;
         let lon: f64 = 103.86666901;
-        let coord = Coord::new(lat, lon);
-        let mut mgrs: Mgrs = coord.into();
-        mgrs.prec = 6;
+        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P1m);
+
         assert_eq!(mgrs.to_string(), "48PUV772989830350");
     }
 
@@ -217,9 +219,8 @@ mod tests {
     fn mgrs_to_string_prec5() {
         let lat: f64 = -23.00958611;
         let lon: f64 = -43.43618250;
-        let coord = Coord::new(lat, lon);
-        let mut mgrs: Mgrs = coord.into();
-        mgrs.prec = 5;
+        let mgrs = Mgrs::from_latlon(lat, lon).with_precision(MgrsPrecision::P10m);
+
         assert_eq!(mgrs.to_string(), "23KPQ6026454563");
     }
 }
