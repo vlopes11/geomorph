@@ -1,7 +1,7 @@
 [package]
 name = "geomorph"
-edition = "2018"
-version = "2.0.0"
+edition = "2021"
+version = "2.0.1"
 authors = ["Victor Lopez <vhrlopes@gmail.com>"]
 description = "Simple conversion between different coordinate systems"
 readme = "README.md"

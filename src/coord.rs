@@ -60,9 +60,6 @@ impl From<Utm> for Coord {
             return Coord::new(0.0, 0.0);
         }
 
-        let latitude: f64;
-        let longitude: f64;
-
         let easting = utm.easting;
         let northing = utm.northing;
         let north = utm.north;
@@ -80,8 +77,8 @@ impl From<Utm> for Coord {
 
         let xisign: f64 = if xi < 0.0 { -1.0 } else { 1.0 };
         let etasign: f64 = if eta < 0.0 { -1.0 } else { 1.0 };
-        xi = xi * xisign;
-        eta = eta * etasign;
+        xi *= xisign;
+        eta *= etasign;
 
         let backside: bool = xi > consts::PI / 2.0;
         if backside {
@@ -108,16 +105,16 @@ impl From<Utm> for Coord {
         let mut z1: Complex64 = Complex::new(0.0, 0.0);
 
         if n == 0 {
-            n = n - 1;
+            n -= 1;
         }
 
         while n > 0 {
             y1 = (a * y0) - (y1) - (datum.bet[n]);
             z1 = (a * z0) - (z1) - (2.0 * (n as f64) * datum.bet[n]);
-            n = n - 1;
+            n -= 1;
             y0 = (a * y1) - (y0) - (datum.bet[n]);
             z0 = (a * z1) - (z0) - (2.0 * (n as f64) * datum.bet[n]);
-            n = n - 1;
+            n -= 1;
         }
 
         a = Complex::new(s0 * ch0, c0 * sh0);
@@ -142,15 +139,15 @@ impl From<Utm> for Coord {
             rlon = 0.0;
         }
 
-        rlat = rlat * xisign;
+        rlat *= xisign;
         if backside {
             rlon = 180.0 - rlon;
         }
-        rlon = rlon * etasign;
+        rlon *= etasign;
         rlon = math::angle_normalize(rlon + lon_0);
 
-        latitude = rlat;
-        longitude = rlon;
+        let latitude = rlat;
+        let longitude = rlon;
 
         Coord::new(latitude, longitude)
     }

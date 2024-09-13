@@ -35,7 +35,7 @@ impl Mgrs {
     /// Mgrs constructor.
     pub const fn new(utm: Utm) -> Mgrs {
         Mgrs {
-            utm: utm,
+            utm,
             precision: MgrsPrecision::P1m,
         }
     }
@@ -71,17 +71,17 @@ impl fmt::Display for Mgrs {
         let mut z: usize = if utm.ups { 0 } else { 2 };
         let base: usize = 10;
 
-        let digits = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        let latband = vec![
+        let digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        let latband = [
             'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U',
             'V', 'W', 'X',
         ];
-        let utmcols = vec![
+        let utmcols = [
             vec!['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
             vec!['J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R'],
             vec!['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
         ];
-        let utmrow = vec![
+        let utmrow = [
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
             'T', 'U', 'V',
         ];
@@ -104,9 +104,9 @@ impl fmt::Display for Mgrs {
 
         if utm.ups {
         } else {
-            let coord: Coord = self.clone().into();
+            let coord: Coord = (*self).into();
             let ilat = coord.lat.floor();
-            let lband = ((ilat + 80.0) / 8.0 - 10.10).min(9.0).max(-10.0);
+            let lband = ((ilat + 80.0) / 8.0 - 10.10).clamp(-10.0, 9.0);
             let iband = (if coord.lat.abs() > angeps {
                 lband
             } else if utm.north {
@@ -164,9 +164,9 @@ impl fmt::Display for Mgrs {
         if prec > 0 {
             ix -= m * xh;
             iy -= m * yh;
-            let d: f64 = (base as f64).powi((max_prec - &prec) as i32);
-            ix = ix / d;
-            iy = iy / d;
+            let d: f64 = (base as f64).powi((max_prec - prec) as i32);
+            ix /= d;
+            iy /= d;
 
             unsafe {
                 while mgrs.len() < z + prec + prec {
@@ -176,12 +176,12 @@ impl fmt::Display for Mgrs {
                 let vec_mgrs = mgrs.as_mut_vec();
 
                 for c in (0..prec).rev() {
-                    let ind1: usize = (z + c) as usize;
-                    let ind2: usize = (z + c + &prec) as usize;
+                    let ind1: usize = z + c;
+                    let ind2: usize = z + c + prec;
                     vec_mgrs[ind1] = digits[(ix % base as f64) as usize] as u8;
-                    ix = ix / base as f64;
+                    ix /= base as f64;
                     vec_mgrs[ind2] = digits[(iy % base as f64) as usize] as u8;
-                    iy = iy / base as f64;
+                    iy /= base as f64;
                 }
             }
         }

@@ -67,13 +67,12 @@ impl Datum {
         betcoeff: &[f64],
         b1coeff: &[f64],
     ) -> Datum {
-        let e2: f64 = f * (2.0 - f);
-        let es: f64;
-        if f <= 0.0 {
-            es = -e2.abs().sqrt();
+        let e2 = f * (2.0 - f);
+        let es = if f <= 0.0 {
+            -e2.abs().sqrt()
         } else {
-            es = e2.abs().sqrt();
-        }
+            e2.abs().sqrt()
+        };
         let e2m: f64 = 1.0 - e2;
         let c: f64 = e2m.sqrt() * math::eatanhe(1.0, es).exp();
         let n: f64 = f / (2.0 - f);
@@ -97,8 +96,8 @@ impl Datum {
             let m = maxpow - i - 1;
             alp[i + 1] = d * math::polyval(m, &alpcoeff[o..], n) / alpcoeff[o + m + 1];
             bet[i + 1] = d * math::polyval(m, &betcoeff[o..], n) / betcoeff[o + m + 1];
-            o = o + m + 2;
-            d = d * n;
+            o += m + 2;
+            d *= n;
         }
 
         Datum {

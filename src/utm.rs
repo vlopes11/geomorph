@@ -64,55 +64,18 @@ impl From<Coord> for Utm {
 
         let easting: f64;
         let northing: f64;
-        let north: bool;
         let mut zone: i32;
-        let band: char;
-        let ups: bool;
 
-        if lat < -72.0 {
-            band = 'C';
-        } else if lat < -64.0 {
-            band = 'D';
-        } else if lat < -56.0 {
-            band = 'E';
-        } else if lat < -48.0 {
-            band = 'F';
-        } else if lat < -40.0 {
-            band = 'G';
-        } else if lat < -32.0 {
-            band = 'H';
-        } else if lat < -24.0 {
-            band = 'J';
-        } else if lat < -16.0 {
-            band = 'K';
-        } else if lat < -8.0 {
-            band = 'L';
-        } else if lat < 0.0 {
-            band = 'M';
-        } else if lat < 8.0 {
-            band = 'N';
-        } else if lat < 16.0 {
-            band = 'P';
-        } else if lat < 24.0 {
-            band = 'Q';
-        } else if lat < 32.0 {
-            band = 'R';
-        } else if lat < 40.0 {
-            band = 'S';
-        } else if lat < 48.0 {
-            band = 'T';
-        } else if lat < 56.0 {
-            band = 'U';
-        } else if lat < 64.0 {
-            band = 'V';
-        } else if lat < 72.0 {
-            band = 'W';
-        } else {
-            band = 'X';
-        }
+        let bands = [
+            'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U',
+            'V', 'W', 'X',
+        ];
+        let band = lat.max(-80.0) + 80.0;
+        let band = band.min(159.0) as usize;
+        let band = bands[band / 8];
 
-        north = lat >= 0.0;
-        ups = lat < -80.0 || lat >= 84.0;
+        let north = lat >= 0.0;
+        let ups = lat < -80.0 || lat >= 84.0;
 
         if !ups {
             let fmod_lon: f64 = math::fmod(lon, 360.0);
@@ -129,14 +92,13 @@ impl From<Coord> for Utm {
 
             let except_band: f64 = ((lat.floor() + 80.0) / 8.0 - 10.0)
                 .trunc()
-                .min(9.0)
-                .max(-10.0);
+                .clamp(-10.0, 9.0);
 
             if utm_exceptions {
                 if except_band == 7.0 && zone == 31 && ilon >= 3.0 {
                     // Norway UTM exception
                     zone = 32;
-                } else if except_band == 9.0 && ilon >= 0.0 && ilon <= 42.0 {
+                } else if except_band == 9.0 && 0.0 <= ilon && ilon <= 42.0 {
                     // Svalbard UTM exception
                     zone = 2 * (((ilon as i32) + 183) / 12) + 1;
                 }
@@ -149,21 +111,11 @@ impl From<Coord> for Utm {
             let lon_0: f64 = 6.0 * (zone as f64) - 183.0;
             let mut lon_norm: f64 = math::angle_diff(lon_0, lon);
 
-            let mut latsign: f64;
-            if lat < 0.0 {
-                latsign = -1.0
-            } else {
-                latsign = 1.0
-            }
-            let lonsign: f64;
-            if lon_norm < 0.0 {
-                lonsign = -1.0
-            } else {
-                lonsign = 1.0
-            }
+            let mut latsign = if lat < 0.0 { -1.0 } else { 1.0 };
+            let lonsign = if lon_norm < 0.0 { -1.0 } else { 1.0 };
 
             let lat_norm: f64 = lat * latsign;
-            lon_norm = lon_norm * lonsign;
+            lon_norm *= lonsign;
 
             let backside: bool = lon_norm > 90.0;
 
@@ -209,10 +161,10 @@ impl From<Coord> for Utm {
             while n > 0 {
                 y1 = (a * y0) - (y1) + (datum.alp[n]);
                 z1 = (a * z0) - (z1) + (2.0 * (n as f64) * datum.alp[n]);
-                n = n - 1;
+                n -= 1;
                 y0 = (a * y1) - (y0) + (datum.alp[n]);
                 z0 = (a * z1) - (z0) + (2.0 * (n as f64) * datum.alp[n]);
-                n = n - 1;
+                n -= 1;
             }
 
             a = Complex::new(s0 * ch0, c0 * sh0);
