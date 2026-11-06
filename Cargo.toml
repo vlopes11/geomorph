@@ -1,12 +1,13 @@
 [package]
 name = "geomorph"
 edition = "2024"
-version = "2.0.2"
+version = "2.1.0"
 authors = ["Victor Lopez <vhrlopes@gmail.com>"]
 description = "Simple conversion between different coordinate systems"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/vlopes11/geomorph"
+categories = ["no-std::no-alloc", "science::geo"]
 keywords = ["geo", "geospatial", "coordinates", "transforms", "transformations"]
 
 [dependencies]
