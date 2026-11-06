@@ -5,10 +5,13 @@ use crate::math;
 use crate::mgrs::Mgrs;
 use crate::utm::Utm;
 
-use std::f64::consts;
-use std::fmt;
+use core::f64::consts;
+use core::fmt;
 
 use num_complex::{Complex, Complex64};
+
+#[cfg(not(feature = "std"))]
+use num_traits::Float as _;
 
 /// Holds a pair for latitude and longitude coordinates
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -33,7 +36,7 @@ impl Coord {
     ///
     /// Latitude will be modular 90.0
     /// Longitude will be mobular 180.0
-    pub fn new_checked(lat: f64, lon: f64) -> Coord {
+    pub const fn new_checked(lat: f64, lon: f64) -> Coord {
         Coord {
             lat: lat % 90.0,
             lon: lon % 180.0,
@@ -49,8 +52,7 @@ impl fmt::Display for Coord {
 
 impl From<Mgrs> for Coord {
     fn from(mgrs: Mgrs) -> Self {
-        let utm: Utm = mgrs.into();
-        utm.into()
+        Utm::from(mgrs).into()
     }
 }
 
@@ -163,9 +165,9 @@ mod tests {
         let lon: f64 = 37.640653;
         let coord = Coord::new(lat, lon);
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 414617.0);
         assert_eq!(utm.northing.trunc(), 6176052.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 37);
         assert_eq!(utm.band, 'U');
         assert_eq!(coord.lat, lat);
@@ -174,8 +176,8 @@ mod tests {
 
     #[test]
     fn from_utm() {
-        let easting: f64 = 725641.61743212992;
-        let northing: f64 = 4911303.2874210617;
+        let easting: f64 = 725_641.617_432_129_9;
+        let northing: f64 = 4_911_303.287_421_062;
         let north: bool = true;
         let zone: i32 = 34;
         let band: char = 'N';

@@ -1,4 +1,8 @@
 #![doc = include_str!("../README.md")]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(test)]
+extern crate alloc;
 
 mod coord;
 mod datum;

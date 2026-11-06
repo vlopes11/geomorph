@@ -5,10 +5,13 @@ use crate::datum::Datum;
 use crate::math;
 use crate::mgrs::Mgrs;
 
-use std::f64::consts;
-use std::fmt;
+use core::f64::consts;
+use core::fmt;
 
 use num_complex::{Complex, Complex64};
+
+#[cfg(not(feature = "std"))]
+use num_traits::Float as _;
 
 /// Holds attributes for Universal Transverse Mercator (UTM) coordinate system
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -79,14 +82,13 @@ impl From<Coord> for Utm {
 
         if !ups {
             let fmod_lon: f64 = math::fmod(lon, 360.0);
-            let ilon: f64;
-            if fmod_lon >= 180.0 {
-                ilon = fmod_lon - 360.0;
+            let ilon: f64 = if fmod_lon >= 180.0 {
+                fmod_lon - 360.0
             } else if fmod_lon < -180.0 {
-                ilon = fmod_lon + 360.0;
+                fmod_lon + 360.0
             } else {
-                ilon = fmod_lon;
-            }
+                fmod_lon
+            };
 
             zone = ((ilon + 186.0) / 6.0).trunc() as i32;
 
@@ -98,7 +100,7 @@ impl From<Coord> for Utm {
                 if except_band == 7.0 && zone == 31 && ilon >= 3.0 {
                     // Norway UTM exception
                     zone = 32;
-                } else if except_band == 9.0 && 0.0 <= ilon && ilon <= 42.0 {
+                } else if except_band == 9.0 && (0.0..=42.0).contains(&ilon) {
                     // Svalbard UTM exception
                     zone = 2 * (((ilon as i32) + 183) / 12) + 1;
                 }
@@ -207,9 +209,9 @@ mod tests {
             lon: -43.4361816,
         };
         let utm: Utm = coord.into();
+        assert!(!utm.north);
         assert_eq!(utm.easting.trunc(), 660265.0);
         assert_eq!(utm.northing.trunc(), 7454564.0);
-        assert_eq!(utm.north, false);
         assert_eq!(utm.zone, 23);
         assert_eq!(utm.band, 'K');
     }
@@ -221,9 +223,9 @@ mod tests {
             lon: 13.412389,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 392273.0);
         assert_eq!(utm.northing.trunc(), 5819744.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 33);
         assert_eq!(utm.band, 'U');
     }
@@ -235,9 +237,9 @@ mod tests {
             lon: 4.680180,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 267038.0);
         assert_eq!(utm.northing.trunc(), 6779002.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 32);
         assert_eq!(utm.band, 'V');
     }
@@ -249,9 +251,9 @@ mod tests {
             lon: 10.457194,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 402386.0);
         assert_eq!(utm.northing.trunc(), 8761675.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 33);
         assert_eq!(utm.band, 'X');
     }
@@ -263,9 +265,9 @@ mod tests {
             lon: 20.349504,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 622751.0);
         assert_eq!(utm.northing.trunc(), 8677619.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 33);
         assert_eq!(utm.band, 'X');
     }
@@ -277,9 +279,9 @@ mod tests {
             lon: 21.013745,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 362459.0);
         assert_eq!(utm.northing.trunc(), 8676854.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 35);
         assert_eq!(utm.band, 'X');
     }
@@ -291,9 +293,9 @@ mod tests {
             lon: 30.194746,
         };
         let utm: Utm = coord.into();
+        assert!(utm.north);
         assert_eq!(utm.easting.trunc(), 573272.0);
         assert_eq!(utm.northing.trunc(), 8675799.0);
-        assert_eq!(utm.north, true);
         assert_eq!(utm.zone, 35);
         assert_eq!(utm.band, 'X');
     }
@@ -304,9 +306,9 @@ mod tests {
         let lon: f64 = 18.549757;
         let coord = Coord::new(lat, lon);
         let utm: Utm = coord.into();
+        assert!(!utm.north);
         assert_eq!(utm.easting.trunc(), 273893.0);
         assert_eq!(utm.northing.trunc(), 6227030.0);
-        assert_eq!(utm.north, false);
         assert_eq!(utm.zone, 34);
         assert_eq!(utm.band, 'H');
         assert_eq!(coord.lat, lat);
@@ -359,9 +361,7 @@ mod tests {
         let zone: i32 = 48;
         let band: char = 'N';
         let ups: bool = false;
-        let mut utm_base = Utm::new(easting, northing, north, zone, band, ups);
-        let utm = utm_base.clone();
-        utm_base.easting = 0.0;
+        let utm = Utm::new(easting, northing, north, zone, band, ups);
         assert_eq!(utm.easting, easting);
         assert_eq!(utm.northing, northing);
         assert_eq!(utm.north, north);

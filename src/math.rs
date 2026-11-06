@@ -1,5 +1,8 @@
 //! Mathematical auxiliary functions
 
+#[cfg(not(feature = "std"))]
+use num_traits::Float as _;
+
 /// Inverse trigonometric tangent
 ///
 /// # Arguments
@@ -81,7 +84,7 @@ pub fn remainder(numer: f64, denom: f64) -> f64 {
 pub fn angle_normalize(d: f64) -> f64 {
     let x: f64 = remainder(d, 360.0);
 
-    (x == -180.0).then_some(180.0).unwrap_or(x)
+    if x == -180.0 { 180.0 } else { x }
 }
 
 /// Calculate a normalized difference between a pair of angles given in degrees
@@ -114,6 +117,8 @@ pub fn polyval(order: usize, coefficents: &[f64], x: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use alloc::vec;
 
     #[test]
     fn test_eatanhe() {
