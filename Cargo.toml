@@ -9,9 +9,6 @@ license = "MIT"
 repository = "https://github.com/vlopes11/geomorph"
 keywords = ["geo", "geospatial", "coordinates", "transforms", "transformations"]
 
-[badges]
-travis-ci = { repository = "vlopes11/geomorph" }
-
 [dependencies]
 num-complex = { version = "0.4", default-features = false }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
