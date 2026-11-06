@@ -33,6 +33,9 @@ pub enum MgrsPrecision {
 }
 
 /// UTM/UPS extension for MGRS formatting
+///
+/// Non-finite UTM eastings and those outside [100000, 900000) meters
+/// format as `INVALID`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Mgrs {
     /// utm: Base UTM/UPS information for MGRS.
@@ -76,6 +79,10 @@ impl fmt::Display for Mgrs {
         let minutmcol = 1.0;
         let utm = &self.utm;
 
+        if !utm.ups && !(100_000.0..900_000.0).contains(&utm.easting) {
+            return f.write_str("INVALID");
+        }
+
         let zone1 = &utm.zone - 1;
         let base: usize = 10;
 
@@ -109,16 +116,14 @@ impl fmt::Display for Mgrs {
 
         if !utm.ups {
             let coord: Coord = (*self).into();
-            let ilat = coord.lat.floor();
-            let lband = ((ilat + 80.0) / 8.0 - 10.10).clamp(-10.0, 9.0);
-            let iband = (if coord.lat.abs() > angeps {
+            let lband = (coord.lat / 8.0).floor().clamp(-10.0, 9.0);
+            let iband = if coord.lat.abs() > angeps {
                 lband
             } else if utm.north {
                 0.0
             } else {
                 -1.0
-            })
-            .trunc();
+            };
             let icol = xh - minutmcol;
             let c = 100.0 * (8.0 * iband + 4.0) / 90.0;
             let minrow = (if iband > -10.0 {
@@ -209,6 +214,65 @@ mod tests {
     use alloc::string::ToString as _;
 
     use super::*;
+
+    #[test]
+    fn mgrs_latitude_bands() {
+        for (south, north, band) in [
+            (-80.0, -72.0, 'C'),
+            (-72.0, -64.0, 'D'),
+            (-64.0, -56.0, 'E'),
+            (-56.0, -48.0, 'F'),
+            (-48.0, -40.0, 'G'),
+            (-40.0, -32.0, 'H'),
+            (-32.0, -24.0, 'J'),
+            (-24.0, -16.0, 'K'),
+            (-16.0, -8.0, 'L'),
+            (-8.0, 0.0, 'M'),
+            (0.0, 8.0, 'N'),
+            (8.0, 16.0, 'P'),
+            (16.0, 24.0, 'Q'),
+            (24.0, 32.0, 'R'),
+            (32.0, 40.0, 'S'),
+            (40.0, 48.0, 'T'),
+            (48.0, 56.0, 'U'),
+            (56.0, 64.0, 'V'),
+            (64.0, 72.0, 'W'),
+            (72.0, 84.0, 'X'),
+        ] {
+            for lat in [south + 1e-6, (south + north) / 2.0, north - 1e-6] {
+                let mgrs = Mgrs::from_latlon(lat, 3.0).to_string();
+                assert_eq!(mgrs.chars().nth(2), Some(band), "latitude {lat}: {mgrs}");
+            }
+        }
+    }
+
+    #[test]
+    fn mgrs_band_and_zone_regressions() {
+        for (lat, lon, expected) in [
+            (-5.0, 3.0, "31MEQ0000047335"),
+            (-10.0, 3.0, "31LEJ0000094587"),
+            (8.5, 3.0, "31PEK0000039574"),
+            (0.0, -0.9, "30NYF3373000000"),
+        ] {
+            assert_eq!(Mgrs::from_latlon(lat, lon).to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn mgrs_unsupported_easting() {
+        for easting in [-1.0, 0.0, 99_999.0, 900_000.0, f64::NAN, f64::INFINITY] {
+            let utm = Utm::new(easting, 0.0, true, 31, 'N', false);
+            assert_eq!(Mgrs::new(utm).to_string(), "INVALID");
+        }
+
+        for (easting, expected) in [
+            (100_000.0, "31NAA0000000000"),
+            (899_999.0, "31NHA9999900000"),
+        ] {
+            let utm = Utm::new(easting, 0.0, true, 31, 'N', false);
+            assert_eq!(Mgrs::new(utm).to_string(), expected);
+        }
+    }
 
     #[test]
     fn mgrs_to_string_prec6() {

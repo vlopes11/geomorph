@@ -43,7 +43,7 @@ pub fn tauf(taup: f64, es: f64) -> f64 {
 
     for _ in (0..numit).rev() {
         let taupa: f64 = taupf(tau, es);
-        let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.sqrt())
+        let dtau: f64 = (taup - taupa) * (1.0 + e2m * tau.powi(2))
             / (e2m * 1.0_f64.hypot(tau) * 1.0_f64.hypot(taupa));
 
         tau += dtau;
@@ -56,14 +56,14 @@ pub fn tauf(taup: f64, es: f64) -> f64 {
     tau
 }
 
-/// Modulus operation for a given f64 pair
+/// Floating-point remainder with the sign of `a`
 ///
 /// # Arguments
 ///
 /// * `a: f64`
 /// * `b: f64` - Different than 0.0
 pub fn fmod(a: f64, b: f64) -> f64 {
-    (a - b * (a / b).trunc()).trunc()
+    a % b
 }
 
 /// Remainder of division for a given f64 pair
@@ -138,10 +138,16 @@ mod tests {
 
     #[test]
     fn test_fmod() {
-        let a: f64 = 5.3;
-        let b: f64 = 2.1;
-        let x: f64 = fmod(a, b);
-        assert_eq!(x, 1.0);
+        for (a, b, expected) in [
+            (5.3, 2.1, 1.1),
+            (-5.3, 2.1, -1.1),
+            (5.3, -2.1, 1.1),
+            (-5.3, -2.1, -1.1),
+            (-0.5, 360.0, -0.5),
+            (360.5, 360.0, 0.5),
+        ] {
+            assert!((fmod(a, b) - expected).abs() < 1e-12);
+        }
     }
 
     #[test]

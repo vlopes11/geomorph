@@ -82,13 +82,14 @@ impl From<Coord> for Utm {
 
         if !ups {
             let fmod_lon: f64 = math::fmod(lon, 360.0);
-            let ilon: f64 = if fmod_lon >= 180.0 {
+            let normalized_lon: f64 = if fmod_lon >= 180.0 {
                 fmod_lon - 360.0
             } else if fmod_lon < -180.0 {
                 fmod_lon + 360.0
             } else {
                 fmod_lon
             };
+            let ilon = normalized_lon.floor();
 
             zone = ((ilon + 186.0) / 6.0).trunc() as i32;
 
@@ -100,7 +101,7 @@ impl From<Coord> for Utm {
                 if except_band == 7.0 && zone == 31 && ilon >= 3.0 {
                     // Norway UTM exception
                     zone = 32;
-                } else if except_band == 9.0 && (0.0..=42.0).contains(&ilon) {
+                } else if except_band == 9.0 && (0.0..42.0).contains(&ilon) {
                     // Svalbard UTM exception
                     zone = 2 * (((ilon as i32) + 183) / 12) + 1;
                 }
@@ -201,6 +202,93 @@ impl From<Coord> for Utm {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn utm_longitude_boundaries() {
+        for (lon, zone) in [
+            (-180.0, 1),
+            (-179.999999, 1),
+            (-6.5, 29),
+            (-6.000001, 29),
+            (-6.0, 30),
+            (-5.999999, 30),
+            (-0.9, 30),
+            (-0.5, 30),
+            (-0.000001, 30),
+            (0.0, 31),
+            (0.000001, 31),
+            (5.999999, 31),
+            (6.0, 32),
+            (6.000001, 32),
+            (179.999999, 60),
+            (180.0, 1),
+        ] {
+            assert_eq!(
+                Utm::from(Coord::new(0.0, lon)).zone,
+                zone,
+                "longitude {lon}"
+            );
+        }
+    }
+
+    #[test]
+    fn utm_svalbard_boundaries() {
+        for (lon, zone) in [
+            (-0.000001, 30),
+            (0.0, 31),
+            (8.999999, 31),
+            (9.0, 33),
+            (20.999999, 33),
+            (21.0, 35),
+            (32.999999, 35),
+            (33.0, 37),
+            (41.999999, 37),
+            (42.0, 38),
+            (42.000001, 38),
+            (42.5, 38),
+        ] {
+            assert_eq!(
+                Utm::from(Coord::new(78.0, lon)).zone,
+                zone,
+                "longitude {lon}"
+            );
+        }
+    }
+
+    #[test]
+    fn coordinate_round_trip_precision() {
+        for lat in [
+            -80.0,
+            -75.0,
+            -70.0,
+            -60.0,
+            -45.0,
+            -23.00958611,
+            -1.0,
+            0.0,
+            1.0,
+            16.5,
+            45.0,
+            55.722682,
+            60.0,
+            70.0,
+            75.0,
+            80.0,
+            83.999999,
+        ] {
+            for lon in [-179.9, -43.4361825, 0.0, 3.0, 37.640653, 41.999999, 179.9] {
+                let output = Coord::from(Utm::from(Coord::new(lat, lon)));
+                assert!(
+                    (output.lat - lat).abs() < 1e-9,
+                    "({lat}, {lon}) -> {output}"
+                );
+                assert!(
+                    (output.lon - lon).abs() < 1e-9,
+                    "({lat}, {lon}) -> {output}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn utm_zone_south() {
