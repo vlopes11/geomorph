@@ -2,6 +2,9 @@
 
 use crate::math;
 
+#[cfg(not(feature = "std"))]
+use num_traits::Float as _;
+
 /// Holds conventional datum information
 #[derive(Debug, Clone, PartialEq)]
 pub struct Datum {
@@ -121,6 +124,7 @@ impl Datum {
 }
 
 #[cfg(test)]
+#[allow(clippy::excessive_precision)]
 mod tests {
     use super::*;
 
@@ -131,7 +135,7 @@ mod tests {
             Datum::new(
                 6378137.0,
                 0.0033528106647474805,
-                0.99960000000000004,
+                0.999_600_000_000_000_04,
                 &[
                     31564.0,
                     -66675.0,

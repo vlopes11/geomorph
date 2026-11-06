@@ -4,7 +4,10 @@ use crate::coord::Coord;
 use crate::math::fmod;
 use crate::utm::Utm;
 
-use std::fmt;
+use core::fmt;
+
+#[cfg(not(feature = "std"))]
+use num_traits::float::FloatCore as _;
 
 /// MGRS precision rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,7 +77,6 @@ impl fmt::Display for Mgrs {
         let utm = &self.utm;
 
         let zone1 = &utm.zone - 1;
-        let mut z: usize = if utm.ups { 0 } else { 2 };
         let base: usize = 10;
 
         let digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -83,21 +85,18 @@ impl fmt::Display for Mgrs {
             'V', 'W', 'X',
         ];
         let utmcols = [
-            vec!['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-            vec!['J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R'],
-            vec!['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+            ['J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R'],
+            ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
         ];
         let utmrow = [
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
             'T', 'U', 'V',
         ];
 
-        let mut mgrs: String = String::from("");
-
-        if utm.ups {
-        } else {
-            mgrs.push(digits[utm.zone as usize / base]);
-            mgrs.push(digits[utm.zone as usize % base]);
+        if !utm.ups {
+            write!(f, "{}", digits[utm.zone as usize / base])?;
+            write!(f, "{}", digits[utm.zone as usize % base])?;
         }
 
         let mut ix: f64 = (utm.easting * mult).floor();
@@ -108,8 +107,7 @@ impl fmt::Display for Mgrs {
 
         let prec = self.precision as usize;
 
-        if utm.ups {
-        } else {
+        if !utm.ups {
             let coord: Coord = (*self).into();
             let ilat = coord.lat.floor();
             let lband = ((ilat + 80.0) / 8.0 - 10.10).clamp(-10.0, 9.0);
@@ -153,8 +151,8 @@ impl fmt::Display for Mgrs {
                 }
             }
 
-            mgrs.push(latband[(10.0 + iband) as usize]);
-            mgrs.push(utmcols[(zone1 % 3) as usize][icol as usize]);
+            write!(f, "{}", latband[(10.0 + iband) as usize])?;
+            write!(f, "{}", utmcols[(zone1 % 3) as usize][icol as usize])?;
             let pos: usize = fmod(
                 yh + (if (zone1 % 2) > 0 {
                     utm_even_row_shift
@@ -163,8 +161,7 @@ impl fmt::Display for Mgrs {
                 }),
                 utm_row_period,
             ) as usize;
-            mgrs.push(utmrow[pos]);
-            z += 3;
+            write!(f, "{}", utmrow[pos])?;
         }
 
         if prec > 0 {
@@ -174,25 +171,24 @@ impl fmt::Display for Mgrs {
             ix /= d;
             iy /= d;
 
-            unsafe {
-                while mgrs.len() < z + prec + prec {
-                    mgrs.push(' ')
-                }
+            for c in (0..prec).rev() {
+                write!(
+                    f,
+                    "{}",
+                    digits[(ix / (base as f64).powi(c as i32) % base as f64) as usize]
+                )?;
+            }
 
-                let vec_mgrs = mgrs.as_mut_vec();
-
-                for c in (0..prec).rev() {
-                    let ind1: usize = z + c;
-                    let ind2: usize = z + c + prec;
-                    vec_mgrs[ind1] = digits[(ix % base as f64) as usize] as u8;
-                    ix /= base as f64;
-                    vec_mgrs[ind2] = digits[(iy % base as f64) as usize] as u8;
-                    iy /= base as f64;
-                }
+            for c in (0..prec).rev() {
+                write!(
+                    f,
+                    "{}",
+                    digits[(iy / (base as f64).powi(c as i32) % base as f64) as usize]
+                )?;
             }
         }
 
-        write!(f, "{}", mgrs)
+        Ok(())
     }
 }
 
@@ -210,6 +206,8 @@ impl From<Coord> for Mgrs {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString as _;
+
     use super::*;
 
     #[test]
