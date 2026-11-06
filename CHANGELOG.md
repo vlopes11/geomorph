@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-06
+
+* fix: improve conversion precision
+* chore: remove travis; add `just check`
+* chore: move to rust edition 2024
+* feat: add no_std support
+
 ## [1.0.0] - 2018-08-21
 
 * Implement MGRS
